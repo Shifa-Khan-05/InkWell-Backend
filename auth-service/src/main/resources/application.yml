@@ -1,0 +1,48 @@
+server:
+    port: 8081
+
+spring:
+    application:
+        name: auth-service
+
+    # Importing the .env file from the parent directory
+    config:
+        import: optional:file:../.env[.properties]
+
+    # Database Configuration
+    # These variables are read from the .env file linked above
+    datasource:
+        url: ${DB_URL}
+        username: ${DB_USER}
+        password: ${DB_PASS}
+        driver-class-name: com.mysql.cj.jdbc.Driver
+
+    # JPA / Hibernate Settings
+    jpa:
+        database-platform: org.hibernate.dialect.MySQLDialect
+        hibernate:
+            ddl-auto: update # Automatically creates tables based on our @Entity classes
+        show-sql: true # Shows SQL in console for debugging
+        properties:
+            hibernate:
+                format_sql: true
+
+# Security Configuration for JWT [cite: 186]
+jwt:
+    secret: ${JWT_SECRET}
+    expiration: 86400000 # 24 hours in milliseconds
+
+# Service Discovery [cite: 18, 729]
+eureka:
+    client:
+        service-url:
+            defaultZone: http://localhost:8761/eureka/
+    instance:
+        prefer-ip-address: true # Recommended for microservices maintenance
+
+# Swagger / OpenAPI Documentation
+springdoc:
+    api-docs:
+        path: /api-docs
+    swagger-ui:
+        path: /swagger-ui.html

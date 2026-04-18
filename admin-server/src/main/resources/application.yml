@@ -1,0 +1,13 @@
+server:
+  port: 9090 # Running on a different port than Eureka
+
+spring:
+  application:
+    name: admin-server
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/ # Pointing to Step 1's server
+  instance:
+    prefer-ip-address: true # Better for future deployment to AWS/Real IP
