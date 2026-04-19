@@ -9,12 +9,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
-
-/**
- * AuthServiceImpl
- * Implements identity logic using DTOs to decouple the API from the Database.
- */
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
@@ -25,29 +19,20 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public UserResponseDTO register(UserRegistrationDTO regDto) {
-        // Checking for duplicate email
         if (userRepository.existsByEmail(regDto.getEmail())) {
             throw new RuntimeException("Email already registered!");
         }
 
-        // Map DTO to Entity
         User user = new User();
         user.setUsername(regDto.getUsername());
         user.setEmail(regDto.getEmail());
         user.setPasswordHash(passwordEncoder.encode(regDto.getPassword()));
         user.setFullName(regDto.getFullName());
-        user.setRole("READER"); // Default role [cite: 187]
+        user.setRole("ROLE_READER"); // Requirement 2.3: Default role
+        user.setActive(true);
 
         User savedUser = userRepository.save(user);
-
-        // Map Entity back to Response DTO
-        return new UserResponseDTO(
-            savedUser.getUserId(),
-            savedUser.getUsername(),
-            savedUser.getEmail(),
-            savedUser.getRole(),
-            savedUser.getFullName()
-        );
+        return mapToResponseDTO(savedUser);
     }
 
     @Override
@@ -55,10 +40,94 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found!"));
 
+        if (!user.isActive()) {
+            throw new RuntimeException("Account is suspended!");
+        }
+
         if (!passwordEncoder.matches(password, user.getPasswordHash())) {
             throw new RuntimeException("Invalid credentials!");
         }
 
+        return jwtUtils.generateToken(user.getEmail());
+    }
+
+//    // ✅ Logic for Google/GitHub Post-Login Processing
+//    @Override
+//    public String processOAuthPostLogin(String email, String name, String provider) {
+//        User user = userRepository.findByEmail(email).orElseGet(() -> {
+//            User newUser = new User();
+//            newUser.setEmail(email);
+//            newUser.setFullName(name);
+//            newUser.setUsername(email.split("@")[0] + "_" + provider.toLowerCase());
+//            newUser.setRole("ROLE_READER");
+//            newUser.setActive(true);
+//            // OAuth users don't have a local password
+//            newUser.setPasswordHash("OAUTH_USER_EXTERNAL"); 
+//            return userRepository.save(newUser);
+//        });
+//        return jwtUtils.generateToken(user.getEmail());
+//    }
+
+    @Override
+    public UserResponseDTO getUserById(int userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found!"));
+        return mapToResponseDTO(user);
+    }
+
+    @Override
+    public String getRoleByEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found!"));
+        return user.getRole();
+    }
+
+    @Override
+    public void logout(String token) {
+        // Logic for token blacklisting can be added here
+        System.out.println("User logged out with token: " + token);
+    }
+
+    @Override
+    public UserResponseDTO updateProfile(int userId, UserRegistrationDTO updateDto) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found!"));
+        if (updateDto.getFullName() != null) user.setFullName(updateDto.getFullName());
+        User updatedUser = userRepository.save(user);
+        return mapToResponseDTO(updatedUser);
+    }
+
+    @Override
+    public void deactivateAccount(int userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found!"));
+        user.setActive(false);
+        userRepository.save(user);
+    }
+
+    private UserResponseDTO mapToResponseDTO(User user) {
+        return new UserResponseDTO(
+                user.getUserId(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getRole(),
+                user.getFullName()
+        );
+    }
+    
+    
+    @Override
+    public String processOAuthPostLogin(String email, String name, String provider) {
+        User user = userRepository.findByEmail(email).orElseGet(() -> {
+            User newUser = new User();
+            newUser.setEmail(email);
+            newUser.setFullName(name);
+            newUser.setUsername(email.split("@")[0] + "_" + provider.toLowerCase());
+            newUser.setRole("ROLE_READER"); 
+            newUser.setActive(true);
+            newUser.setPasswordHash("OAUTH_USER_EXTERNAL"); 
+            return userRepository.save(newUser);
+        });
         return jwtUtils.generateToken(user.getEmail());
     }
 }

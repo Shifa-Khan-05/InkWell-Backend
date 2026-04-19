@@ -9,9 +9,12 @@ import lombok.Setter;
 @Getter
 @Setter
 @AllArgsConstructor
+
 public class UserRegistrationDTO {
 	private String username;
 	private String email;
 	private String password; // Raw password from frontend
 	private String fullName;
+	private String role; // READER, AUTHOR, or ADMIN
+
 }
