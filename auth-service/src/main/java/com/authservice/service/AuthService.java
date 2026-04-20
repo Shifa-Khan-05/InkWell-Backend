@@ -1,25 +1,31 @@
 package com.authservice.service;
 
+import org.springframework.web.multipart.MultipartFile;
+
+import com.authservice.dto.ProfileUpdateDTO;
 import com.authservice.dto.UserRegistrationDTO;
 import com.authservice.dto.UserResponseDTO;
 
 public interface AuthService {
 
-    UserResponseDTO register(UserRegistrationDTO regDto);
+	UserResponseDTO register(UserRegistrationDTO regDto);
 
-    String login(String email, String password);
+	String login(String email, String password);
 
-    void logout(String token);
 
-    UserResponseDTO getUserById(int userId);
+	UserResponseDTO getUserById(int userId);
 
-    UserResponseDTO updateProfile(int userId, UserRegistrationDTO userDto);
+	UserResponseDTO findByEmail(String email);
 
-    void deactivateAccount(int userId);
 
-    String getRoleByEmail(String email); // ✅ FIXED PARAM NAME
+	UserResponseDTO updateProfileWithFile(int userId, String fullName, String bio, MultipartFile image);
 
 	String processOAuthPostLogin(String email, String name, String provider);
-    
-    
+
+	void deactivateAccount(int userId);
+
+	UserResponseDTO updateProfile(int userId, ProfileUpdateDTO updateDto);
+
+	String getRoleByEmail(String email);
+
 }

@@ -42,4 +42,6 @@ public class User {
 	private boolean isActive = true; //
 
 	private LocalDateTime createdAt = LocalDateTime.now(); //
+	
+    private String profileImageUrl;
 }

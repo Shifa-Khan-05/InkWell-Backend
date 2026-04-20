@@ -34,6 +34,12 @@ spring:
                             - email
                             - profile
 
+    # ✅ ADDITION 1: Support for profile image browsing/upload
+    servlet:
+        multipart:
+            max-file-size: 5MB
+            max-request-size: 5MB
+
 jwt:
     secret: ${JWT_SECRET}
     expiration: 86400000
@@ -44,6 +50,18 @@ eureka:
             defaultZone: http://localhost:8761/eureka/
     instance:
         prefer-ip-address: true
+        # ✅ ADDITION 2: Unique ID for Admin Server tracking
+        instance-id: ${spring.application.name}:${server.port}
+
+# ✅ ADDITION 3: Required for Admin Server health status
+management:
+    endpoints:
+        web:
+            exposure:
+                include: "*"
+    endpoint:
+        health:
+            show-details: always
 
 springdoc:
     api-docs:
