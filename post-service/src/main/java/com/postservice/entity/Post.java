@@ -57,4 +57,6 @@ public class Post {
 	public void onUpdate() {
 		this.updatedAt = LocalDateTime.now();
 	}
+	
+	private String imageUrl; // ✅ Added to store the image path
 }

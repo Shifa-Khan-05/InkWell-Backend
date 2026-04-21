@@ -4,10 +4,15 @@ server:
 spring:
     application:
         name: api-gateway
+    # ✅ Fix for 413 Error: Allow large file uploads through Gateway
+    servlet:
+        multipart:
+            max-file-size: 10MB
+            max-request-size: 10MB
     cloud:
         gateway:
             server:
-                webflux: # ✅ REQUIRED for Spring Boot 3.5.13
+                webflux:
                     globalcors:
                         add-to-simple-url-handler-mapping: true
                         cors-configurations:
@@ -27,7 +32,9 @@ spring:
                         - id: post-service
                           uri: lb://POST-SERVICE
                           predicates:
-                              - Path=/posts/**
+                              # ✅ Gateway now routes both API calls and Static Images
+                              - Path=/posts/**, /post_uploads/**
+                                filters:- PreserveHostHeader
 
 eureka:
     client:

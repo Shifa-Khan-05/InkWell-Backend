@@ -2,6 +2,7 @@ package com.postservice.service;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import com.postservice.client.AuthClient;
 import com.postservice.dto.PostCreationDTO;
 import com.postservice.dto.PostResponseDTO;
@@ -10,9 +11,12 @@ import com.postservice.entity.Post;
 import com.postservice.entity.PostLike;
 import com.postservice.repository.PostRepository;
 import com.postservice.repository.LikeRepository;
-
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -21,29 +25,71 @@ import java.util.stream.Collectors;
 public class PostServiceImpl implements PostService {
 
 	private final PostRepository postRepository;
-	private final LikeRepository likeRepository; // ✅ Added to track unique likes
+	private final LikeRepository likeRepository;
 	private final ModelMapper modelMapper;
 	private final AuthClient authClient;
 
 	@Override
 	public PostResponseDTO createPost(PostCreationDTO postDto) {
-		Post post = new Post();
-		post.setTitle(postDto.getTitle());
-		post.setContent(postDto.getContent());
-		post.setExcerpt(postDto.getExcerpt());
-		post.setAuthorId(postDto.getAuthorId());
-		post.setFeaturedImageUrl(postDto.getFeaturedImageUrl());
-
-		String slug = postDto.getTitle().toLowerCase().trim().replaceAll("[^a-z0-9]+", "-");
-		post.setSlug(slug);
-
-		int wordCount = postDto.getContent().split("\\s+").length;
-		post.setReadTimeMin(Math.max(1, wordCount / 200));
-
+		Post post = modelMapper.map(postDto, Post.class);
+		post.setSlug(generateSlug(postDto.getTitle()));
+		post.setReadTimeMin(calculateReadTime(postDto.getContent()));
 		post.setStatus(postDto.getStatus() != null ? postDto.getStatus() : "DRAFT");
+		post.setLikesCount(0);
 
 		Post savedPost = postRepository.save(post);
 		return modelMapper.map(savedPost, PostResponseDTO.class);
+	}
+
+	@Override
+	@Transactional
+	public PostResponseDTO createPostWithImage(PostCreationDTO postDto, MultipartFile image) throws IOException {
+		if (image != null && !image.isEmpty()) {
+			postDto.setFeaturedImageUrl(saveImage(image));
+		}
+		return createPost(postDto);
+	}
+
+	@Override
+	@Transactional
+	public PostResponseDTO updatePostWithImage(int postId, PostCreationDTO postDto, MultipartFile image)
+			throws IOException {
+		Post post = postRepository.findById(postId).orElseThrow(() -> new RuntimeException("Post not found"));
+
+		if (image != null && !image.isEmpty()) {
+			post.setFeaturedImageUrl(saveImage(image));
+		}
+
+		post.setTitle(postDto.getTitle());
+		post.setContent(postDto.getContent());
+		post.setExcerpt(postDto.getExcerpt());
+		post.setStatus(postDto.getStatus());
+		post.setSlug(generateSlug(postDto.getTitle()));
+		post.setReadTimeMin(calculateReadTime(postDto.getContent()));
+
+		Post updated = postRepository.save(post);
+		return modelMapper.map(updated, PostResponseDTO.class);
+	}
+
+	private String saveImage(MultipartFile image) throws IOException {
+		String uploadDir = "post_uploads/";
+		java.io.File directory = new java.io.File(uploadDir);
+		if (!directory.exists())
+			directory.mkdirs();
+
+		String fileName = System.currentTimeMillis() + "_" + image.getOriginalFilename();
+		java.nio.file.Path path = java.nio.file.Paths.get(uploadDir + fileName);
+		java.nio.file.Files.write(path, image.getBytes());
+
+		// ✅ Use only ONE slash here
+		return "http://localhost:8080/post_uploads/" + fileName;
+	}
+
+	private int calculateReadTime(String content) {
+		if (content == null)
+			return 1;
+		int wordCount = content.split("\\s+").length;
+		return Math.max(1, wordCount / 200);
 	}
 
 	@Override
@@ -63,10 +109,7 @@ public class PostServiceImpl implements PostService {
 		Post post = postRepository.findById(postId).orElseThrow(() -> new RuntimeException("Post not found"));
 		post.setTitle(postDto.getTitle());
 		post.setContent(postDto.getContent());
-		post.setExcerpt(postDto.getExcerpt());
 		post.setStatus(postDto.getStatus());
-		post.setSlug(postDto.getTitle().toLowerCase().trim().replaceAll("[^a-z0-9]+", "-"));
-
 		Post updated = postRepository.save(post);
 		return modelMapper.map(updated, PostResponseDTO.class);
 	}
@@ -84,60 +127,48 @@ public class PostServiceImpl implements PostService {
 
 	@Override
 	public PostResponseDTO getPostBySlug(String slug, int currentUserId) {
-		// 1. Fetch the post entity
 		Post post = postRepository.findBySlug(slug).orElseThrow(() -> new RuntimeException("Post not found"));
-
-		// 2. Map to DTO and enrich with Author name
 		PostResponseDTO dto = enrichWithAuthor(post);
-
-		// 3. FORCE update the likesCount from the entity to the DTO
 		dto.setLikesCount(post.getLikesCount());
 
-		// 4. ✅ THE FIX: Check if a permanent record exists in the likes table
 		if (currentUserId > 0) {
-			boolean hasLiked = likeRepository.existsByPostIdAndUserId(post.getPostId(), currentUserId);
-			dto.setLikedByCurrentUser(hasLiked); // This tells React the heart should be red
-		} else {
-			dto.setLikedByCurrentUser(false);
+			dto.setLikedByCurrentUser(likeRepository.existsByPostIdAndUserId(post.getPostId(), currentUserId));
 		}
-
 		return dto;
 	}
 
 	@Override
-	@Transactional // Ensures atomic updates for both tables
+	@Transactional
 	public void incrementLikes(int postId, int userId) {
-	    // 1. Fetch the post
-	    Post post = postRepository.findById(postId)
-	            .orElseThrow(() -> new RuntimeException("Post not found"));
+		Post post = postRepository.findById(postId).orElseThrow(() -> new RuntimeException("Post not found"));
 
-	    // 2. Check if the user has already liked this post
-	    if (likeRepository.existsByPostIdAndUserId(postId, userId)) {
-	        // ❌ UNLIKE LOGIC: Remove the record and decrease count
-	        likeRepository.deleteByPostIdAndUserId(postId, userId);
-	        post.setLikesCount(Math.max(0, post.getLikesCount() - 1));
-	    } else {
-	        // ❤️ LIKE LOGIC: Add the record and increase count
-	        likeRepository.save(new PostLike(postId, userId));
-	        post.setLikesCount(post.getLikesCount() + 1);
-	    }
-
-	    // 3. Save the updated post count
-	    postRepository.save(post);
+		if (likeRepository.existsByPostIdAndUserId(postId, userId)) {
+			likeRepository.deleteByPostIdAndUserId(postId, userId);
+			post.setLikesCount(Math.max(0, post.getLikesCount() - 1));
+		} else {
+			likeRepository.save(new PostLike(postId, userId));
+			post.setLikesCount(post.getLikesCount() + 1);
+		}
+		postRepository.save(post);
 	}
 
-	// ✅ Reusable Helper to fetch Author Name from Auth-Service via Feign
 	private PostResponseDTO enrichWithAuthor(Post post) {
 		PostResponseDTO dto = modelMapper.map(post, PostResponseDTO.class);
-		// Explicitly map likesCount as it's the most critical field for refresh
-		dto.setLikesCount(post.getLikesCount());
-
 		try {
+			// Fetch user details from Auth-Service via Feign Client
 			UserResponseDTO author = authClient.getUserById(post.getAuthorId());
-			dto.setFullName(author.getFullName());
+
+			// ✅ Set the actual name from the Auth Service
+			dto.setAuthorName(author.getFullName());
 		} catch (Exception e) {
-			dto.setFullName("InkWell Author");
+			dto.setAuthorName("InkWell User"); // Fallback
 		}
 		return dto;
+	}
+
+	private String generateSlug(String title) {
+		String baseSlug = title.toLowerCase().trim().replaceAll("[^a-z0-9]+", "-");
+		// Append a small random string or timestamp to guarantee uniqueness
+		return baseSlug + "-" + System.currentTimeMillis() % 10000;
 	}
 }

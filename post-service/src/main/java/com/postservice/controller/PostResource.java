@@ -4,71 +4,69 @@ import com.postservice.dto.PostCreationDTO;
 import com.postservice.dto.PostResponseDTO;
 import com.postservice.service.PostService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 import java.util.List;
 
 @RestController
 @RequestMapping("/posts")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
 public class PostResource {
 
     private final PostService postService;
 
-    /**
-     * Create a new post (Draft or Published)
-     */
-    @PostMapping("/create")
-    public ResponseEntity<PostResponseDTO> createPost(@RequestBody PostCreationDTO postDto) {
-        return ResponseEntity.ok(postService.createPost(postDto));
+    @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<PostResponseDTO> createPost(
+            @RequestParam("title") String title,
+            @RequestParam("content") String content,
+            @RequestParam(value = "excerpt", required = false) String excerpt,
+            @RequestParam("authorId") int authorId,
+            @RequestParam(value = "status", defaultValue = "DRAFT") String status,
+            @RequestParam(value = "image", required = false) MultipartFile image) throws IOException {
+
+        PostCreationDTO postDto = new PostCreationDTO();
+        postDto.setTitle(title);
+        postDto.setContent(content);
+        postDto.setExcerpt(excerpt);
+        postDto.setAuthorId(authorId);
+        postDto.setStatus(status);
+
+        return new ResponseEntity<>(postService.createPostWithImage(postDto, image), HttpStatus.CREATED);
     }
 
-    /**
-     * Get all posts by a specific author (used in Author Studio)
-     */
+    @PutMapping(value = "/{postId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<PostResponseDTO> updatePost(
+            @PathVariable int postId,
+            @RequestParam("title") String title,
+            @RequestParam("content") String content,
+            @RequestParam(value = "excerpt", required = false) String excerpt,
+            @RequestParam("status") String status,
+            @RequestParam(value = "image", required = false) MultipartFile image) throws IOException {
+
+        PostCreationDTO postDto = new PostCreationDTO();
+        postDto.setTitle(title);
+        postDto.setContent(content);
+        postDto.setExcerpt(excerpt);
+        postDto.setStatus(status);
+
+        return ResponseEntity.ok(postService.updatePostWithImage(postId, postDto, image));
+    }
+
     @GetMapping("/author/{authorId}")
     public ResponseEntity<List<PostResponseDTO>> getByAuthor(@PathVariable int authorId) {
         return ResponseEntity.ok(postService.getPostsByAuthor(authorId));
     }
 
-    /**
-     * Get post by numeric ID
-     */
-    @GetMapping("/{id}")
-    public ResponseEntity<PostResponseDTO> getById(@PathVariable int id) {
-        return ResponseEntity.ok(postService.getPostById(id));
-    }
-
-    /**
-     * Requirement 2.4: Update existing post content or status
-     */
-    @PutMapping("/{postId}")
-    public ResponseEntity<PostResponseDTO> updatePost(@PathVariable int postId, @RequestBody PostCreationDTO postDto) {
-        return ResponseEntity.ok(postService.updatePost(postId, postDto));
-    }
-
-    /**
-     * Requirement 2.4: Delete a post permanently
-     */
-    @DeleteMapping("/{postId}")
-    public ResponseEntity<Void> deletePost(@PathVariable int postId) {
-        postService.deletePost(postId);
-        return ResponseEntity.noContent().build();
-    }
-
-    /**
-     * Fetch only posts with status 'PUBLISHED' for the Browse/Reader feed
-     */
     @GetMapping("/published")
     public ResponseEntity<List<PostResponseDTO>> getPublishedPosts() {
         return ResponseEntity.ok(postService.getPublishedPosts());
     }
 
-    /**
-     * Requirement 2.1: Fetch full post content by SEO-friendly slug.
-     * Fixed the 'RequestPSaram' typo here.
-     */
     @GetMapping("/slug/{slug}")
     public ResponseEntity<PostResponseDTO> getPostBySlug(
             @PathVariable String slug,
@@ -76,15 +74,22 @@ public class PostResource {
         return ResponseEntity.ok(postService.getPostBySlug(slug, userId));
     }
 
-    /**
-     * Requirement 2.2: Readers can like posts.
-     * Fixed the 'RequestPSaram' typo here.
-     */
     @PostMapping("/{postId}/like")
     public ResponseEntity<Void> incrementLikes(
             @PathVariable int postId, 
             @RequestParam(name = "userId") int userId) {
         postService.incrementLikes(postId, userId);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<PostResponseDTO> getById(@PathVariable int id) {
+        return ResponseEntity.ok(postService.getPostById(id));
+    }
+
+    @DeleteMapping("/{postId}")
+    public ResponseEntity<Void> deletePost(@PathVariable int postId) {
+        postService.deletePost(postId);
+        return ResponseEntity.noContent().build();
     }
 }

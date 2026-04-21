@@ -8,6 +8,12 @@ spring:
     config:
         import: optional:file:../.env[.properties]
 
+    # ✅ Fix for 413 Error: Allow Post-Service to accept large images
+    servlet:
+        multipart:
+            max-file-size: 10MB
+            max-request-size: 10MB
+
     datasource:
         url: ${POST_DB_URL}
         username: ${DB_USER}
@@ -22,12 +28,10 @@ eureka:
     client:
         service-url:
             defaultZone: http://localhost:8761/eureka/
-    # ✅ ADDITION 1: Unique ID for Admin Server tracking
     instance:
         prefer-ip-address: true
         instance-id: ${spring.application.name}:${server.port}
 
-# ✅ ADDITION 2: Required for Admin Server health status
 management:
     endpoints:
         web:
@@ -37,6 +41,5 @@ management:
         health:
             show-details: always
 
-# Custom setting for read-time calculation
 blog:
-    wpm: 200 # Average reading speed
+    wpm: 200

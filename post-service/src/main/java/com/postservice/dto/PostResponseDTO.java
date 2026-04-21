@@ -16,5 +16,10 @@ public class PostResponseDTO {
     private int readTimeMin;
     private int viewCount;
     private int likesCount;
+    private String authorName; // Change from fullName to authorName for clarity
     private boolean isLikedByCurrentUser; // ✅ ADD THIS
+	public void setFeaturedImageUrl(String featuredImageUrl) {
+		// TODO Auto-generated method stub
+		
+	}
 }
