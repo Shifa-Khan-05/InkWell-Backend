@@ -1,144 +1,135 @@
-# 🛡️ InkWell Auth & User Service
+🛡️ InkWell Post Service
 
-The **Auth & User Service** is the core identity and security module of the **InkWell Blogging Platform**. It handles authentication, authorization, and user profile management while ensuring secure access through modern standards like JWT and OAuth2.
+---
+
+The **Post-Service** is a core microservice of the InkWell blogging platform. It manages the **entire content lifecycle**, from drafting stories to publishing them for public engagement.
 
 ---
 
 ## 📌 Overview
 
-This service is responsible for:
+The Post-Service powers the storytelling experience in InkWell by enabling:
 
-* Managing user accounts and profiles
-* Handling secure authentication using JWT
-* Enforcing Role-Based Access Control (RBAC)
-* Supporting social login via OAuth2 providers
-* Managing account lifecycle (activation, deactivation)
+* Draft creation and publishing workflows
+* SEO-friendly post management
+* Reader engagement (likes system)
+* Integration with Auth-Service for author details
 
-It acts as the **central security layer** for all other microservices in the InkWell ecosystem.
+It plays a critical role in delivering a seamless writing and reading experience.
 
 ---
 
 ## 🚀 Key Features
 
-### 👤 User Management
+### 📝 Draft & Publish Workflow
 
-* Create, update, retrieve, and manage user profiles
-* Supports user bio and avatar customization
-* Soft account deactivation capability
+* Authors can create posts as **DRAFT**
+* Publish posts to make them visible in the public feed
+* Supports iterative content creation
 
-### 🔐 Security & Authentication
+### 🧠 Intelligent Metadata
 
-* Password encryption using **BCrypt**
-* Stateless authentication via **JWT (JSON Web Tokens)**
-* Secure login and token validation
-* CORS configuration for frontend integration
+* Auto-generates **SEO-friendly slugs**
+* Calculates **estimated reading time** based on word count
 
-### 🧩 Role-Based Access Control (RBAC)
+### ❤️ Smart Engagement System
 
-| Role       | Permissions                          |
-| ---------- | ------------------------------------ |
-| **READER** | Browse posts, comment                |
-| **AUTHOR** | Create, edit, and manage own content |
-| **ADMIN**  | Full system control, user management |
+* Ensures **one-user-one-like rule**
+* Supports **like/unlike toggle**
+* Prevents duplicate likes using database constraints
 
-### 🌐 OAuth2 Integration
+### 🔗 Author Enrichment
 
-* Google login support
-* GitHub login support
-* Automatic account creation for social users
+* Uses **Feign Client** to fetch author details from Auth-Service
+* Maps `authorId` → real user identity
 
-### 🔄 Account Lifecycle Management
+### 🌐 Slug-Based Routing
 
-* Activate / deactivate users
-* Suspend accounts for policy violations
+* Clean and SEO-friendly URLs:
+
+```id="n7g1jv"
+/posts/my-first-story
+```
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Layer     | Technology            |
-| --------- | --------------------- |
-| Language  | Java 17               |
-| Framework | Spring Boot 3.4.2     |
-| Security  | Spring Security + JWT |
-| Database  | MySQL                 |
-| ORM       | Spring Data JPA       |
-| Mapping   | ModelMapper           |
-| Utilities | Lombok                |
+| Layer         | Technology        |
+| ------------- | ----------------- |
+| Language      | Java 17           |
+| Framework     | Spring Boot 3.2.5 |
+| Database      | MySQL             |
+| ORM           | Hibernate (JPA)   |
+| Auditing      | Hibernate Envers  |
+| Communication | OpenFeign         |
+| Discovery     | Eureka Server     |
 
 ---
 
-## 🏗️ Architecture
+## 🏗️ Architecture Highlights
 
-This service strictly follows the **BridgeLabz Case Study Class Diagram**.
+* Microservice-based design
+* Service discovery via Eureka
+* Inter-service communication via Feign
+* Transaction-safe engagement system
 
-### 📦 Core Components
+---
 
-#### 🧾 User Entity
+## ⚙️ Technical Implementation
 
-Stores:
+### ❤️ Engagement Persistence
 
-* `userId`
-* `username`
-* `email`
-* `passwordHash`
-* `role`
-* `bio`
-* `avatarUrl`
-* `provider` (OAuth source)
-* `isActive`
+To ensure **data integrity and consistency**, likes are stored in a separate table:
 
-#### ⚙️ AuthService
+```java id="l2m9pw"
+@Table(name = "post_likes", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"post_id", "user_id"})
+})
+public class PostLike {
+    // fields, getters, setters
+}
+```
 
-Handles business logic:
+### 🔒 Key Design Principles
 
-* `register()`
-* `login()`
-* `validateToken()`
-* `deactivateAccount()`
+* **Atomic Transactions** using `@Transactional`
+* Prevents duplicate likes
+* Ensures consistency between:
 
-#### 🌐 AuthResource (Controller)
-
-Exposes REST APIs for frontend communication.
+  * Like count
+  * Individual user engagement
 
 ---
 
 ## 📡 API Endpoints
 
-| Method   | Endpoint                 | Access        | Description              |
-| -------- | ------------------------ | ------------- | ------------------------ |
-| **POST** | `/auth/register`         | Public        | Register a new user      |
-| **POST** | `/auth/login`            | Public        | Authenticate and get JWT |
-| **GET**  | `/auth/profile/{id}`     | Authenticated | Get user profile         |
-| **PUT**  | `/auth/profile/{id}`     | Authenticated | Update profile           |
-| **POST** | `/auth/logout`           | Authenticated | Logout user              |
-| **PUT**  | `/admin/deactivate/{id}` | Admin         | Deactivate user          |
+| Method   | Endpoint                           | Description                        |
+| -------- | ---------------------------------- | ---------------------------------- |
+| **POST** | `/posts/create`                    | Create a new post (default: DRAFT) |
+| **GET**  | `/posts/published`                 | Get all published posts            |
+| **GET**  | `/posts/slug/{slug}?userId={id}`   | Get post details + like status     |
+| **POST** | `/posts/{postId}/like?userId={id}` | Toggle like/unlike                 |
 
 ---
 
 ## ⚙️ Setup & Installation
 
-### 1️⃣ Clone Repository
+### 1️⃣ Prerequisites
 
-```bash
-git clone https://github.com/your-username/inkwell-auth-service.git
-cd inkwell-auth-service
-```
+* Java 17
+* Maven
+* MySQL
+* Eureka Server running on `8761`
 
 ---
 
-### 2️⃣ Database Setup
-
-Create MySQL database:
-
-```sql
-CREATE DATABASE inkwell_auth;
-```
+### 2️⃣ Database Configuration
 
 Update `application.properties`:
 
-```properties
-spring.datasource.url=jdbc:mysql://localhost:3306/inkwell_auth
+```properties id="p8y2wk"
+spring.datasource.url=jdbc:mysql://localhost:3306/inkwell_post
 spring.datasource.username=your_username
 spring.datasource.password=your_password
 
@@ -148,94 +139,73 @@ spring.jpa.show-sql=true
 
 ---
 
-### 3️⃣ Environment Variables (Recommended)
+### 3️⃣ Important Migration Note
 
-```env
-JWT_SECRET=your_secret_key
-JWT_EXPIRATION=86400000
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_secret
-GITHUB_CLIENT_ID=your_github_client_id
-GITHUB_CLIENT_SECRET=your_github_secret
+If migrating from older versions:
+
+```sql id="k4twlq"
+DROP TABLE IF EXISTS post_likes;
 ```
 
 ---
 
-### 4️⃣ Run the Application
+### 4️⃣ Run the Service
 
-```bash
+```bash id="n2fjg7"
 mvn clean install
 mvn spring-boot:run
 ```
 
-Application will start on:
+---
 
-```
-http://localhost:8081
-```
+## 🔗 Service Dependencies
+
+* **Auth-Service** → Fetch author details
+* **Eureka Server** → Service discovery
 
 ---
 
-## 🔐 Authentication Flow
+## 🧪 Example Request
 
-1. User registers or logs in
-2. Server validates credentials
-3. JWT token is generated
-4. Client sends token in headers
-5. Backend validates token for each request
-
----
-
-## 🧪 Testing
-
-You can test APIs using:
-
-* Postman
-* Swagger 
-* Curl
-
-Example:
-
-```bash
-curl -X POST http://localhost:8081/auth/login \
+```bash id="o3ql2n"
+curl -X POST http://localhost:8082/posts/create \
 -H "Content-Type: application/json" \
--d '{"email":"test@example.com","password":"123456"}'
+-d '{"title":"My First Blog","content":"Hello InkWell!"}'
 ```
 
 ---
 
 ## 📁 Project Structure
 
-```
-src/main/java/com/inkwell/auth
+```id="b7x2mr"
+src/main/java/com/inkwell/post
 │
-├── config          # Security & JWT configs
-├── controller      # REST controllers
+├── controller      # REST APIs
 ├── service         # Business logic
 ├── repository      # JPA repositories
 ├── entity          # Database models
-├── dto             # Request/Response DTOs
-└── util            # Helper classes
+├── dto             # Request/Response objects
+├── client          # Feign clients
+└── config          # Configurations
 ```
 
 ---
 
-## 🔒 Security Best Practices Implemented
+## 🔒 Design Considerations
 
-* Password hashing with BCrypt
-* Stateless authentication
-* Role-based authorization
-* Secure token validation
-* OAuth2 login support
+* Data consistency using transactions
+* Scalable microservice communication
+* Clean separation of concerns
+* SEO optimization via slug system
 
 ---
 
 ## 🚧 Future Enhancements
 
-* Refresh Token implementation
-* Email verification system
-* Multi-factor authentication (MFA)
-* Rate limiting & brute-force protection
-* Audit logging
+* Comments system
+* Bookmarking feature
+* Trending algorithm
+* Tag/category support
+* Search & filtering
 
 ---
