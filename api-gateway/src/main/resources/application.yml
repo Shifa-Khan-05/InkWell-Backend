@@ -1,24 +1,35 @@
 server:
-  port: 8080 # The standard port for the entry point
+    port: 8080
 
 spring:
-  application:
-    name: api-gateway
-  cloud:
-    gateway:
-      discovery:
-        locator:
-          enabled: true # Automatically create routes based on Eureka service names
-      # We will define specific routes here as we build our business services
-      routes:
-        - id: auth-service-route
-          uri: lb://AUTH-SERVICE
-          predicates:
-            - Path=/auth/**
+    application:
+        name: api-gateway
+    cloud:
+        gateway:
+            server:
+                webflux: # ✅ REQUIRED for Spring Boot 3.5.13
+                    globalcors:
+                        add-to-simple-url-handler-mapping: true
+                        cors-configurations:
+                            "[/**]":
+                                allowedOrigins: "http://localhost:5173"
+                                allowedMethods: "*"
+                                allowedHeaders: "*"
+                                allowCredentials: true
+                    discovery:
+                        locator:
+                            enabled: true
+                    routes:
+                        - id: auth-service
+                          uri: lb://AUTH-SERVICE
+                          predicates:
+                              - Path=/auth/**
+                        - id: post-service
+                          uri: lb://POST-SERVICE
+                          predicates:
+                              - Path=/posts/**
 
 eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
-  instance:
-    prefer-ip-address: true
+    client:
+        service-url:
+            defaultZone: http://localhost:8761/eureka/

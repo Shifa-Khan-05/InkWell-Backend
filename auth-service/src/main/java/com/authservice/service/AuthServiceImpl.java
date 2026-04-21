@@ -25,20 +25,24 @@ public class AuthServiceImpl implements AuthService {
 	// ================= REGISTER =================
 	@Override
 	public UserResponseDTO register(UserRegistrationDTO regDto) {
-		if (userRepository.existsByEmail(regDto.getEmail())) {
-			throw new RuntimeException("Email already registered!");
-		}
+	    if (userRepository.existsByEmail(regDto.getEmail())) {
+	        throw new RuntimeException("Email already registered!");
+	    }
 
-		User user = new User();
-		user.setUsername(regDto.getUsername());
-		user.setEmail(regDto.getEmail());
-		user.setPasswordHash(passwordEncoder.encode(regDto.getPassword()));
-		user.setFullName(regDto.getFullName());
-		user.setRole("ROLE_READER");
-		user.setActive(true);
+	    User user = new User();
+	    user.setUsername(regDto.getUsername());
+	    user.setEmail(regDto.getEmail());
+	    user.setPasswordHash(passwordEncoder.encode(regDto.getPassword()));
+	    user.setFullName(regDto.getFullName());
+	    
+	    // ✅ FIX: Dynamically set role and add "ROLE_" prefix
+	    String selectedRole = regDto.getRole() != null ? regDto.getRole() : "READER";
+	    user.setRole("ROLE_" + selectedRole.toUpperCase());
+	    
+	    user.setActive(true);
 
-		User savedUser = userRepository.save(user);
-		return mapToResponseDTO(savedUser);
+	    User savedUser = userRepository.save(user);
+	    return mapToResponseDTO(savedUser);
 	}
 
 	// ================= LOGIN =================

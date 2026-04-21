@@ -10,7 +10,6 @@ import java.util.Optional;
 public interface LikeRepository extends JpaRepository<PostLike, Long> {
 
     /**
-     * ✅ Checks if a specific user has already liked a specific post.
      * Used to prevent duplicate likes and to set the 'liked' state on the frontend.
      */
     boolean existsByPostIdAndUserId(int postId, int userId);
