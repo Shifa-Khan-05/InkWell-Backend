@@ -21,25 +21,8 @@ public class CommentServiceImpl implements CommentService {
 	@Override
 	public Comment addComment(Comment comment) {
 		comment.setStatus("PENDING");
+		comment.setLikesCount(0);
 		return commentRepository.save(comment);
-	}
-
-	private CommentResponseDTO mapToDTO(Comment comment) {
-		CommentResponseDTO dto = new CommentResponseDTO();
-		dto.setCommentId(comment.getCommentId());
-		dto.setContent(comment.getContent());
-		dto.setStatus(comment.getStatus());
-		dto.setLikesCount(comment.getLikesCount());
-		dto.setCreatedAt(comment.getCreatedAt());
-
-		// Fetch name from Auth-Service via Feign
-		try {
-			UserResponseDTO user = authClient.getUserById(comment.getUserId());
-			dto.setAuthorName(user.getFullName());
-		} catch (Exception e) {
-			dto.setAuthorName("InkWell Reader");
-		}
-		return dto;
 	}
 
 	@Override
@@ -81,15 +64,30 @@ public class CommentServiceImpl implements CommentService {
 
 	@Override
 	public List<CommentResponseDTO> getCommentsByPost(Integer postId) {
-		// Fetch only APPROVED comments for the post detail view
 		return commentRepository.findByPostIdOrderByCreatedAtDesc(postId).stream()
 				.filter(c -> "APPROVED".equals(c.getStatus())).map(this::mapToDTO).collect(Collectors.toList());
 	}
 
 	@Override
 	public List<CommentResponseDTO> getPendingComments() {
-		// Fetch all PENDING comments for the Admin Dashboard
 		return commentRepository.findAll().stream().filter(c -> "PENDING".equals(c.getStatus())).map(this::mapToDTO)
 				.collect(Collectors.toList());
+	}
+
+	private CommentResponseDTO mapToDTO(Comment comment) {
+		CommentResponseDTO dto = new CommentResponseDTO();
+		dto.setCommentId(comment.getCommentId());
+		dto.setContent(comment.getContent());
+		dto.setStatus(comment.getStatus());
+		dto.setLikesCount(comment.getLikesCount());
+		dto.setCreatedAt(comment.getCreatedAt());
+
+		try {
+			UserResponseDTO user = authClient.getUserById(comment.getUserId());
+			dto.setAuthorName(user.getFullName());
+		} catch (Exception e) {
+			dto.setAuthorName("InkWell Reader");
+		}
+		return dto;
 	}
 }
