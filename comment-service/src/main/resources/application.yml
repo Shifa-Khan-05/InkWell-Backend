@@ -1,0 +1,29 @@
+server:
+    port: 8083
+
+spring:
+    config:
+        import: optional:file:../.env[.properties]
+    application:
+        name: comment-service
+    datasource:
+        url: ${COMMENT_DB}
+        username: ${DB_USER}
+        password: ${DB_PASS}
+        driver-class-name: com.mysql.cj.jdbc.Driver
+    jpa:
+        hibernate:
+            ddl-auto: update
+        show-sql: true
+        properties:
+            hibernate:
+                dialect: org.hibernate.dialect.MySQLDialect
+                format_sql: true
+
+eureka:
+    client:
+        service-url:
+            defaultZone: http://localhost:8761/eureka/
+    instance:
+        # ✅ Change this to false so it uses 'localhost' instead of the network IP
+        prefer-ip-address: false

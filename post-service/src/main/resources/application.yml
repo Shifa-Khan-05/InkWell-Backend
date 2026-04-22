@@ -1,42 +1,45 @@
 server:
-    port: 8082
+  port: 8082
 
 spring:
-    application:
-        name: post-service
+  application:
+    name: post-service
+  config:
+    import: optional:file:../.env[.properties]
+  
+  # ✅ ADD THIS SECTION TO FIX THE 413 ERROR
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
 
-    config:
-        import: optional:file:../.env[.properties]
+  datasource:
+    url: ${POST_DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASS}
 
-    datasource:
-        url: ${POST_DB_URL}
-        username: ${DB_USER}
-        password: ${DB_PASS}
-
-    jpa:
-        hibernate:
-            ddl-auto: update
-        show-sql: true
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
 
 eureka:
-    client:
-        service-url:
-            defaultZone: http://localhost:8761/eureka/
-    # ✅ ADDITION 1: Unique ID for Admin Server tracking
-    instance:
-        prefer-ip-address: true
-        instance-id: ${spring.application.name}:${server.port}
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: false
+    instance-id: ${spring.application.name}:${server.port}
+    hostname: localhost
 
-# ✅ ADDITION 2: Required for Admin Server health status
 management:
-    endpoints:
-        web:
-            exposure:
-                include: "*"
-    endpoint:
-        health:
-            show-details: always
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
 
-# Custom setting for read-time calculation
 blog:
-    wpm: 200 # Average reading speed
+  wpm: 200

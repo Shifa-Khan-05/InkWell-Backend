@@ -1,22 +1,18 @@
 package com.authservice.service;
 
 import org.springframework.web.multipart.MultipartFile;
-
 import com.authservice.dto.ProfileUpdateDTO;
 import com.authservice.dto.UserRegistrationDTO;
 import com.authservice.dto.UserResponseDTO;
 
 public interface AuthService {
-
 	UserResponseDTO register(UserRegistrationDTO regDto);
 
 	String login(String email, String password);
 
-
 	UserResponseDTO getUserById(int userId);
 
 	UserResponseDTO findByEmail(String email);
-
 
 	UserResponseDTO updateProfileWithFile(int userId, String fullName, String bio, MultipartFile image);
 
@@ -28,4 +24,8 @@ public interface AuthService {
 
 	String getRoleByEmail(String email);
 
+	// ✅ Added for Admin Requirements
+	void updateUserRole(Integer userId, String newRole);
+
+	void deleteUser(Integer userId);
 }

@@ -3,6 +3,8 @@ package com.authservice.controller;
 import com.authservice.dto.ProfileUpdateDTO;
 import com.authservice.dto.UserRegistrationDTO;
 import com.authservice.dto.UserResponseDTO;
+import com.authservice.entity.User;
+import com.authservice.repository.UserRepository;
 import com.authservice.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -11,15 +13,16 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
-// ❌ REMOVED @CrossOrigin to prevent duplicate header conflict with Gateway
 public class AuthResource {
 
 	private final AuthService authService;
+	private final UserRepository userRepository;
 
 	@PostMapping("/login")
 	public ResponseEntity<?> login(@RequestBody Map<String, String> creds) {
@@ -54,15 +57,50 @@ public class AuthResource {
 		}
 	}
 
-	@PutMapping("/profile/{userId}")
-	public ResponseEntity<UserResponseDTO> updateProfile(@PathVariable int userId, @RequestBody ProfileUpdateDTO dto) {
-		return ResponseEntity.ok(authService.updateProfile(userId, dto));
-	}
-
 	@PutMapping(value = "/profile/{userId}/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<UserResponseDTO> updateProfileWithImage(@PathVariable int userId,
 			@RequestParam("fullName") String fullName, @RequestParam(value = "bio", required = false) String bio,
 			@RequestParam(value = "image", required = false) MultipartFile image) {
 		return ResponseEntity.ok(authService.updateProfileWithFile(userId, fullName, bio != null ? bio : "", image));
+	}
+
+	// ================= ADMIN PROTOCOLS (Req 2.5) =================
+
+	/**
+	 * Requirement: View all user accounts.
+	 */
+	@GetMapping("/users")
+	public ResponseEntity<List<User>> getAllUsers() {
+		return ResponseEntity.ok(userRepository.findAll());
+	}
+
+	/**
+	 * Requirement: Change roles (Reader/Author/Admin).
+	 */
+	@PutMapping("/users/{userId}/role")
+	public ResponseEntity<Void> updateRole(@PathVariable Integer userId, @RequestParam String newRole) {
+		authService.updateUserRole(userId, newRole);
+		return ResponseEntity.ok().build();
+	}
+
+	/**
+	 * Requirement: Permanently delete accounts.
+	 */
+	@DeleteMapping("/users/{userId}")
+	public ResponseEntity<Void> deleteUser(@PathVariable Integer userId) {
+		authService.deleteUser(userId);
+		return ResponseEntity.noContent().build();
+	}
+
+	/**
+	 * Requirement: Suspend or Reactivate accounts. Logic: Sets 'active' boolean in
+	 * the database to true/false.
+	 */
+	@PutMapping("/users/{userId}/status")
+	public ResponseEntity<Void> toggleUserStatus(@PathVariable Integer userId, @RequestParam boolean active) {
+		User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+		user.setActive(active);
+		userRepository.save(user);
+		return ResponseEntity.ok().build();
 	}
 }
