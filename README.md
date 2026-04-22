@@ -1,135 +1,306 @@
-🛡️ InkWell Post Service
+🛡️ InkWell Comment Service
 
 ---
 
-The **Post-Service** is a core microservice of the InkWell blogging platform. It manages the **entire content lifecycle**, from drafting stories to publishing them for public engagement.
+The **Comment-Service** is a dedicated microservice within the InkWell platform responsible for enabling **user interaction, feedback, and discussions** on blog posts. It supports threaded conversations, moderation workflows, and scalable engagement while maintaining clean separation from other services.
 
 ---
 
 ## 📌 Overview
 
-The Post-Service powers the storytelling experience in InkWell by enabling:
+The Comment-Service provides a **robust engagement layer** that allows readers to:
 
-* Draft creation and publishing workflows
-* SEO-friendly post management
-* Reader engagement (likes system)
-* Integration with Auth-Service for author details
+* Add comments to posts
+* Reply to existing comments (threaded discussions)
+* Like/unlike comments
+* View comment threads per post
+* Support moderation workflows (approve/reject/delete)
 
-It plays a critical role in delivering a seamless writing and reading experience.
+It integrates with the **Auth-Service** for user identity and operates independently from the Post-Service using only `postId` references.
 
 ---
 
 ## 🚀 Key Features
 
-### 📝 Draft & Publish Workflow
+### 💬 Comment Management
 
-* Authors can create posts as **DRAFT**
-* Publish posts to make them visible in the public feed
-* Supports iterative content creation
+* Create, update, and delete comments
+* Fetch comments by post
+* Nested replies using `parentCommentId`
 
-### 🧠 Intelligent Metadata
+---
 
-* Auto-generates **SEO-friendly slugs**
-* Calculates **estimated reading time** based on word count
+### 🧵 Threaded Conversations
 
-### ❤️ Smart Engagement System
+* Supports **hierarchical comment structure**
+* Top-level comments + replies
+* Efficient retrieval of discussion threads
 
-* Ensures **one-user-one-like rule**
-* Supports **like/unlike toggle**
-* Prevents duplicate likes using database constraints
+---
 
-### 🔗 Author Enrichment
+### ❤️ Comment Engagement
 
-* Uses **Feign Client** to fetch author details from Auth-Service
-* Maps `authorId` → real user identity
+* Like/unlike comments
+* Track `likesCount` per comment
+* Prevent inconsistent engagement updates
 
-### 🌐 Slug-Based Routing
+---
 
-* Clean and SEO-friendly URLs:
+### 🛡️ Moderation System
 
-```id="n7g1jv"
-/posts/my-first-story
-```
+* Status-based control:
+
+  * `PENDING`
+  * `APPROVED`
+  * `REJECTED`
+  * `DELETED`
+
+* Admin/moderator actions:
+
+  * Approve comments
+  * Reject inappropriate content
+
+---
+
+### 🔗 Microservice Integration
+
+* Uses **OpenFeign** to fetch user details from Auth-Service
+* Maintains loose coupling via `userId`
+
+---
+
+### 🌐 Service Discovery
+
+* Registered with **Eureka Server**
+* Discoverable by API Gateway and other services
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Layer         | Technology        |
-| ------------- | ----------------- |
-| Language      | Java 17           |
-| Framework     | Spring Boot 3.2.5 |
-| Database      | MySQL             |
-| ORM           | Hibernate (JPA)   |
-| Auditing      | Hibernate Envers  |
-| Communication | OpenFeign         |
-| Discovery     | Eureka Server     |
+| Layer         | Technology      |
+| ------------- | --------------- |
+| Language      | Java 17         |
+| Framework     | Spring Boot 3.x |
+| Database      | MySQL           |
+| ORM           | Spring Data JPA |
+| Communication | OpenFeign       |
+| Discovery     | Eureka Server   |
+| Utilities     | Lombok          |
 
 ---
 
-## 🏗️ Architecture Highlights
+## 🏗️ Architecture (Based on Class Diagram)
 
-* Microservice-based design
-* Service discovery via Eureka
-* Inter-service communication via Feign
-* Transaction-safe engagement system
+### 📦 Core Components
+
+#### 🧾 Comment Entity
+
+Stores:
+
+* `commentId`
+* `postId`
+* `authorId`
+* `parentCommentId` (nullable for top-level comments)
+* `content`
+* `likesCount`
+* `status`
+* `createdAt`
+* `updatedAt`
 
 ---
 
-## ⚙️ Technical Implementation
+#### 📂 CommentRepository
 
-### ❤️ Engagement Persistence
+Provides:
 
-To ensure **data integrity and consistency**, likes are stored in a separate table:
+* `findByPostId()`
+* `findByParentCommentId()`
+* `findById()`
+* `countByPostId()`
+* `deleteByCommentId()`
 
-```java id="l2m9pw"
-@Table(name = "post_likes", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"post_id", "user_id"})
-})
-public class PostLike {
-    // fields, getters, setters
-}
-```
+---
 
-### 🔒 Key Design Principles
+#### ⚙️ CommentService
 
-* **Atomic Transactions** using `@Transactional`
-* Prevents duplicate likes
-* Ensures consistency between:
+Defines:
 
-  * Like count
-  * Individual user engagement
+* Add comment
+* Fetch comments
+* Manage replies
+* Update/delete comments
+* Like/unlike logic
+* Moderation actions
+
+---
+
+#### 🔧 CommentServiceImpl
+
+Implements:
+
+* Business logic
+* Validation
+* Threaded comment handling
+* Like system
+* Status transitions
+
+---
+
+#### 🌐 CommentResource (Controller)
+
+Handles REST endpoints for:
+
+* Comment CRUD
+* Replies
+* Moderation
+* Engagement
+
+---
+
+## 🗄️ Database Schema
+
+### 📘 Comments Table
+
+| Field           | Description       |
+| --------------- | ----------------- |
+| commentId       | Primary key       |
+| postId          | Associated post   |
+| authorId        | User ID           |
+| parentCommentId | For replies       |
+| content         | Comment text      |
+| likesCount      | Engagement count  |
+| status          | Moderation state  |
+| createdAt       | Created timestamp |
+| updatedAt       | Last updated      |
 
 ---
 
 ## 📡 API Endpoints
 
-| Method   | Endpoint                           | Description                        |
-| -------- | ---------------------------------- | ---------------------------------- |
-| **POST** | `/posts/create`                    | Create a new post (default: DRAFT) |
-| **GET**  | `/posts/published`                 | Get all published posts            |
-| **GET**  | `/posts/slug/{slug}?userId={id}`   | Get post details + like status     |
-| **POST** | `/posts/{postId}/like?userId={id}` | Toggle like/unlike                 |
+### 🔹 Add Comment
+
+```http
+POST /comments
+```
+
+---
+
+### 🔹 Get Comments by Post
+
+```http
+GET /comments/post/{postId}
+```
+
+---
+
+### 🔹 Get Comment by ID
+
+```http
+GET /comments/{id}
+```
+
+---
+
+### 🔹 Get Replies
+
+```http
+GET /comments/{id}/replies
+```
+
+---
+
+### 🔹 Update Comment
+
+```http
+PUT /comments/{id}
+```
+
+---
+
+### 🔹 Delete Comment
+
+```http
+DELETE /comments/{id}
+```
+
+---
+
+### 🔹 Approve Comment
+
+```http
+PUT /comments/{id}/approve
+```
+
+---
+
+### 🔹 Reject Comment
+
+```http
+PUT /comments/{id}/reject
+```
+
+---
+
+### 🔹 Like Comment
+
+```http
+POST /comments/{id}/like
+```
+
+---
+
+### 🔹 Unlike Comment
+
+```http
+POST /comments/{id}/unlike
+```
+
+---
+
+### 🔹 Get Comment Count
+
+```http
+GET /comments/post/{postId}/count
+```
+
+---
+
+## 🔄 Inter-Service Communication
+
+### Flow
+
+1. Client requests comments
+2. Comment-Service fetches data from DB
+3. Extracts `authorId`
+4. Calls Auth-Service via Feign
+5. Combines data → returns enriched response
 
 ---
 
 ## ⚙️ Setup & Installation
 
-### 1️⃣ Prerequisites
+### ✅ Prerequisites
 
 * Java 17
 * Maven
 * MySQL
-* Eureka Server running on `8761`
+* Eureka Server (port 8761)
 
 ---
 
-### 2️⃣ Database Configuration
+### 🛢️ Database Setup
 
-Update `application.properties`:
+```sql
+CREATE DATABASE inkwell_comment_db;
+```
 
-```properties id="p8y2wk"
-spring.datasource.url=jdbc:mysql://localhost:3306/inkwell_post
+---
+
+### ⚙️ Configuration
+
+```properties
+spring.datasource.url=jdbc:mysql://localhost:3306/inkwell_comment_db
 spring.datasource.username=your_username
 spring.datasource.password=your_password
 
@@ -139,73 +310,78 @@ spring.jpa.show-sql=true
 
 ---
 
-### 3️⃣ Important Migration Note
+### ▶️ Run Service
 
-If migrating from older versions:
-
-```sql id="k4twlq"
-DROP TABLE IF EXISTS post_likes;
-```
-
----
-
-### 4️⃣ Run the Service
-
-```bash id="n2fjg7"
+```bash
 mvn clean install
 mvn spring-boot:run
 ```
 
----
+Runs on:
 
-## 🔗 Service Dependencies
-
-* **Auth-Service** → Fetch author details
-* **Eureka Server** → Service discovery
-
----
-
-## 🧪 Example Request
-
-```bash id="o3ql2n"
-curl -X POST http://localhost:8082/posts/create \
--H "Content-Type: application/json" \
--d '{"title":"My First Blog","content":"Hello InkWell!"}'
+```bash
+http://localhost:8083
 ```
+
+---
+
+## 🔒 Security Considerations
+
+* Trusts JWT validation via API Gateway/Auth-Service
+* Ensures only authorized users:
+
+  * Modify their own comments
+  * Perform moderation (ADMIN role)
+
+---
+
+## ⚡ Performance & Scalability
+
+### Optimizations
+
+* Indexed queries on `postId`
+* Lazy loading for replies
+* DTO-based lightweight responses
+
+### Scalability
+
+* Stateless design
+* Horizontal scaling supported
+* Independent database
+
+---
+
+## 🧪 Testing Strategy
+
+* Unit Tests (Service layer)
+* Integration Tests (Repository + DB)
+* API Testing (Postman/Swagger)
 
 ---
 
 ## 📁 Project Structure
 
-```id="b7x2mr"
-src/main/java/com/inkwell/post
-│
-├── controller      # REST APIs
-├── service         # Business logic
-├── repository      # JPA repositories
-├── entity          # Database models
-├── dto             # Request/Response objects
-├── client          # Feign clients
-└── config          # Configurations
 ```
-
----
-
-## 🔒 Design Considerations
-
-* Data consistency using transactions
-* Scalable microservice communication
-* Clean separation of concerns
-* SEO optimization via slug system
+comment-service
+│
+├── controller
+├── service
+├── repository
+├── entity
+├── dto
+├── client
+└── config
+```
 
 ---
 
 ## 🚧 Future Enhancements
 
-* Comments system
-* Bookmarking feature
-* Trending algorithm
-* Tag/category support
-* Search & filtering
+* 🔔 Notifications for replies
+* 🧠 AI-based moderation
+* 🔍 Comment search
+* 👍 Persistent like tracking (like Post-Service)
+* 🧵 Infinite nested threads
+* 📊 Engagement analytics
 
 ---
