@@ -28,4 +28,6 @@ public interface AuthService {
 	void updateUserRole(Integer userId, String newRole);
 
 	void deleteUser(Integer userId);
+
+	Integer getUserIdByEmail(String email);
 }

@@ -31,11 +31,15 @@ public class OAuthSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
         // Process logic via AuthService
         String token = authService.processOAuthPostLogin(email, name, "google");
         String role = authService.getRoleByEmail(email);
+        
+        // ✅ ADD THIS: Fetch the actual userId from your database using the email
+        Integer userId = authService.getUserIdByEmail(email); 
 
         // Redirect to frontend with query params for OAuthSuccess.jsx
         String targetUrl = UriComponentsBuilder.fromUriString("http://localhost:5173/oauth-success")
                 .queryParam("token", token)
                 .queryParam("role", role)
+                .queryParam("userId", userId) // ✅ CRITICAL: Now the frontend can see the ID
                 .build().toUriString();
 
         getRedirectStrategy().sendRedirect(request, response, targetUrl);

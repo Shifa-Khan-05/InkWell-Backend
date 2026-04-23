@@ -147,4 +147,10 @@ public class AuthServiceImpl implements AuthService {
 		}
 		userRepository.deleteById(userId);
 	}
+	
+	public Integer getUserIdByEmail(String email) {
+	    return userRepository.findByEmail(email)
+	            .map(User::getUserId) // Or .getId() depending on your entity
+	            .orElse(null);
+	}
 }
