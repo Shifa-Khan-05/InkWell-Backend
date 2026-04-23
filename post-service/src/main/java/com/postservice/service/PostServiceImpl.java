@@ -2,7 +2,6 @@ package com.postservice.service;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 import com.postservice.client.AuthClient;
 import com.postservice.client.TaxonomyClient;
 import com.postservice.dto.PostCreationDTO;
@@ -14,8 +13,7 @@ import com.postservice.repository.PostRepository;
 import com.postservice.repository.LikeRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import java.io.IOException;
-import java.nio.file.*;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,95 +29,113 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional
-    public PostResponseDTO savePost(PostCreationDTO postDto, MultipartFile image) {
+    public PostResponseDTO createPost(PostCreationDTO dto) {
         Post post = new Post();
-        post.setTitle(postDto.getTitle());
-        post.setContent(postDto.getContent());
-        post.setExcerpt(postDto.getExcerpt() != null ? postDto.getExcerpt() : "");
-        post.setAuthorId(postDto.getAuthorId());
-        post.setStatus(postDto.getStatus() != null ? postDto.getStatus() : "DRAFT");
         
-        // ✅ CRITICAL: Map the Category ID from DTO to Entity
-        post.setCategoryId(postDto.getCategoryId());
+        // 1. Basic Mapping
+        post.setTitle(dto.getTitle());
+        post.setContent(dto.getContent());
+        post.setAuthorId(dto.getAuthorId());
+        post.setStatus(dto.getStatus() != null ? dto.getStatus() : "DRAFT");
+        post.setCategoryId(dto.getCategoryId());
+        post.setFeaturedImageUrl(dto.getFeaturedImageUrl()); // Received from Frontend/Media-Service
 
-        // Generate SEO Slug
-        String slug = postDto.getTitle().toLowerCase().trim().replaceAll("[^a-z0-9]+", "-");
-        post.setSlug(slug);
+        // 2. Automated Meta-data
+        post.setExcerpt(generateExcerpt(dto));
+        post.setReadTimeMin(calculateReadTime(dto.getContent()));
+        post.setCreatedAt(LocalDateTime.now());
+        post.setUpdatedAt(LocalDateTime.now());
 
-        // Calculate Read Time
-        int wordCount = postDto.getContent().split("\\s+").length;
-        post.setReadTimeMin(Math.max(1, wordCount / 200));
-
-        // Handle Image
-        if (image != null && !image.isEmpty()) {
-            post.setFeaturedImageUrl(handleImageUpload(image));
-        }
+        // 3. Generate Unique Slug (Fixes 500 Error)
+        post.setSlug(generateUniqueSlug(dto.getTitle()));
 
         Post savedPost = postRepository.save(post);
 
-        // ✅ SYNC: Trigger Taxonomy Service count update if published
-        if ("PUBLISHED".equalsIgnoreCase(savedPost.getStatus()) && savedPost.getCategoryId() != null) {
-            try {
-                taxonomyClient.incrementPostCount(savedPost.getCategoryId());
-            } catch (Exception e) {
-                System.err.println("Taxonomy increment failed: " + e.getMessage());
-            }
-        }
+        // 4. Sync with Taxonomy Service
+        triggerTaxonomySync(savedPost);
 
         return enrichWithAuthor(savedPost);
     }
 
     @Override
     @Transactional
-    public PostResponseDTO updateExistingPost(int postId, PostCreationDTO postDto, MultipartFile image) {
+    public PostResponseDTO updatePost(int postId, PostCreationDTO dto) {
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new RuntimeException("Post not found"));
-        
-        boolean previouslyPublished = "PUBLISHED".equalsIgnoreCase(post.getStatus());
+                .orElseThrow(() -> new RuntimeException("Manuscript not found"));
 
-        post.setTitle(postDto.getTitle());
-        post.setContent(postDto.getContent());
-        post.setExcerpt(postDto.getExcerpt());
-        post.setStatus(postDto.getStatus());
-        
-        // ✅ Update Category ID
-        post.setCategoryId(postDto.getCategoryId());
-        
-        // Update Slug
-        post.setSlug(postDto.getTitle().toLowerCase().trim().replaceAll("[^a-z0-9]+", "-"));
+        boolean statusChangedToPublished = !"PUBLISHED".equalsIgnoreCase(post.getStatus()) 
+                                          && "PUBLISHED".equalsIgnoreCase(dto.getStatus());
 
-        if (image != null && !image.isEmpty()) {
-            post.setFeaturedImageUrl(handleImageUpload(image));
+        post.setTitle(dto.getTitle());
+        post.setContent(dto.getContent());
+        post.setExcerpt(dto.getExcerpt());
+        post.setStatus(dto.getStatus());
+        post.setCategoryId(dto.getCategoryId());
+        post.setFeaturedImageUrl(dto.getFeaturedImageUrl());
+        post.setUpdatedAt(LocalDateTime.now());
+
+        Post updatedPost = postRepository.save(post);
+
+        if (statusChangedToPublished) {
+            triggerTaxonomySync(updatedPost);
         }
 
-        Post updated = postRepository.save(post);
-
-        // ✅ SYNC: Only increment if it's newly published
-        if (!previouslyPublished && "PUBLISHED".equalsIgnoreCase(updated.getStatus()) && updated.getCategoryId() != null) {
-            try {
-                taxonomyClient.incrementPostCount(updated.getCategoryId());
-            } catch (Exception e) {
-                System.err.println("Taxonomy increment failed during update.");
-            }
-        }
-
-        return enrichWithAuthor(updated);
+        return enrichWithAuthor(updatedPost);
     }
 
-    // ✅ HELPER: Reusable Image Upload Logic
-    private String handleImageUpload(MultipartFile image) {
-        try {
-            String uploadDir = "uploads/posts/";
-            Path uploadPath = Paths.get(uploadDir);
-            if (!Files.exists(uploadPath)) Files.createDirectories(uploadPath);
-
-            String fileName = "post_" + System.currentTimeMillis() + "_" + image.getOriginalFilename();
-            Files.copy(image.getInputStream(), uploadPath.resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
-            
-            return "http://localhost:8082/uploads/posts/" + fileName;
-        } catch (IOException e) {
-            throw new RuntimeException("File storage failed");
+    // ✅ HELPER: Generate unique slug by appending timestamp if duplicate found
+    private String generateUniqueSlug(String title) {
+        String baseSlug = title.toLowerCase().trim().replaceAll("[^a-z0-9]+", "-");
+        String finalSlug = baseSlug;
+        int attempts = 1;
+        
+        while (postRepository.existsBySlug(finalSlug)) {
+            finalSlug = baseSlug + "-" + (System.currentTimeMillis() % 1000) + attempts;
+            attempts++;
         }
+        return finalSlug;
+    }
+
+    // ✅ HELPER: Logic to handle Author Details via Feign
+    private PostResponseDTO enrichWithAuthor(Post post) {
+        PostResponseDTO dto = modelMapper.map(post, PostResponseDTO.class);
+        // Ensure image URL is explicitly set if mapper misses it
+        dto.setFeaturedImageUrl(post.getFeaturedImageUrl());
+        dto.setLikesCount(post.getLikesCount());
+        
+        try {
+            UserResponseDTO author = authClient.getUserById(post.getAuthorId());
+            dto.setFullName(author.getFullName());
+        } catch (Exception e) {
+            dto.setFullName("InkWell Author");
+        }
+        return dto;
+    }
+
+    private String generateExcerpt(PostCreationDTO dto) {
+        if (dto.getExcerpt() != null && !dto.getExcerpt().isEmpty()) return dto.getExcerpt();
+        return dto.getContent().length() > 150 ? dto.getContent().substring(0, 150) + "..." : dto.getContent();
+    }
+
+    private int calculateReadTime(String content) {
+        if (content == null) return 1;
+        int wordCount = content.split("\\s+").length;
+        return Math.max(1, wordCount / 200);
+    }
+
+    private void triggerTaxonomySync(Post post) {
+        if ("PUBLISHED".equalsIgnoreCase(post.getStatus()) && post.getCategoryId() != null) {
+            try {
+                taxonomyClient.incrementPostCount(post.getCategoryId());
+            } catch (Exception ignored) {}
+        }
+    }
+
+    // ✅ Standard List Fetchers
+    @Override
+    public List<PostResponseDTO> getPublishedPosts() {
+        return postRepository.findByStatusOrderByCreatedAtDesc("PUBLISHED").stream()
+                .map(this::enrichWithAuthor).collect(Collectors.toList());
     }
 
     @Override
@@ -129,31 +145,23 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public PostResponseDTO getPostById(int id) {
-        Post post = postRepository.findById(id).orElseThrow(() -> new RuntimeException("Post not found"));
-        return enrichWithAuthor(post);
-    }
-
-    @Override
-    public void deletePost(int postId) {
-        postRepository.deleteById(postId);
-    }
-
-    @Override
-    public List<PostResponseDTO> getPublishedPosts() {
-        return postRepository.findByStatusOrderByCreatedAtDesc("PUBLISHED").stream()
+    public List<PostResponseDTO> getPostsByCategoryId(Integer catId) {
+        return postRepository.findByCategoryId(catId).stream()
                 .map(this::enrichWithAuthor).collect(Collectors.toList());
+    }
+
+    @Override
+    public PostResponseDTO getPostById(int id) {
+        return postRepository.findById(id).map(this::enrichWithAuthor)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
     }
 
     @Override
     public PostResponseDTO getPostBySlug(String slug, int currentUserId) {
         Post post = postRepository.findBySlug(slug).orElseThrow(() -> new RuntimeException("Post not found"));
         PostResponseDTO dto = enrichWithAuthor(post);
-        dto.setLikesCount(post.getLikesCount());
-
         if (currentUserId > 0) {
-            boolean hasLiked = likeRepository.existsByPostIdAndUserId(post.getPostId(), currentUserId);
-            dto.setLikedByCurrentUser(hasLiked);
+            dto.setLikedByCurrentUser(likeRepository.existsByPostIdAndUserId(post.getPostId(), currentUserId));
         }
         return dto;
     }
@@ -162,7 +170,6 @@ public class PostServiceImpl implements PostService {
     @Transactional
     public void incrementLikes(int postId, int userId) {
         Post post = postRepository.findById(postId).orElseThrow(() -> new RuntimeException("Post not found"));
-
         if (likeRepository.existsByPostIdAndUserId(postId, userId)) {
             likeRepository.deleteByPostIdAndUserId(postId, userId);
             post.setLikesCount(Math.max(0, post.getLikesCount() - 1));
@@ -173,33 +180,8 @@ public class PostServiceImpl implements PostService {
         postRepository.save(post);
     }
 
-    private PostResponseDTO enrichWithAuthor(Post post) {
-        PostResponseDTO dto = modelMapper.map(post, PostResponseDTO.class);
-        dto.setLikesCount(post.getLikesCount());
-        try {
-            UserResponseDTO author = authClient.getUserById(post.getAuthorId());
-            dto.setFullName(author.getFullName());
-        } catch (Exception e) {
-            dto.setFullName("InkWell Author");
-        }
-        return dto;
-    }
-
     @Override
-    public PostResponseDTO createPost(PostCreationDTO postDto) {
-        return savePost(postDto, null);
-    }
-
-    @Override
-    public PostResponseDTO updatePost(int postId, PostCreationDTO postDto) {
-        return updateExistingPost(postId, postDto, null);
-    }
-    
-    @Override
-    public List<PostResponseDTO> getPostsByCategoryId(Integer catId) {
-        // Assuming you add 'findByCategoryId' to your PostRepository
-        return postRepository.findByCategoryId(catId).stream()
-                .map(this::enrichWithAuthor)
-                .collect(Collectors.toList());
+    public void deletePost(int postId) {
+        postRepository.deleteById(postId);
     }
 }

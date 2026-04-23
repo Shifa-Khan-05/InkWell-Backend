@@ -1,33 +1,26 @@
 package com.postservice.service;
 
 import java.util.List;
-
-import org.springframework.web.multipart.MultipartFile;
-
 import com.postservice.dto.PostCreationDTO;
 import com.postservice.dto.PostResponseDTO;
 
 public interface PostService {
 
-	PostResponseDTO createPost(PostCreationDTO postDto);
+    PostResponseDTO createPost(PostCreationDTO postDto);
 
-	PostResponseDTO getPostById(int id);
+    PostResponseDTO updatePost(int postId, PostCreationDTO postDto);
 
-	List<PostResponseDTO> getPostsByAuthor(int authorId);
+    PostResponseDTO getPostById(int id);
 
-	void deletePost(int postId);
+    PostResponseDTO getPostBySlug(String slug, int currentUserId);
 
-	PostResponseDTO updatePost(int postId, PostCreationDTO postDto);
+    List<PostResponseDTO> getPostsByAuthor(int authorId);
 
-	List<PostResponseDTO> getPublishedPosts();
+    List<PostResponseDTO> getPublishedPosts();
 
-	PostResponseDTO getPostBySlug(String slug, int currentUserId);
+    List<PostResponseDTO> getPostsByCategoryId(Integer catId);
 
-	void incrementLikes(int postId, int userId);
+    void deletePost(int postId);
 
-	PostResponseDTO savePost(PostCreationDTO postDto, MultipartFile image);
-
-	PostResponseDTO updateExistingPost(int postId, PostCreationDTO postDto, MultipartFile image);
-
-	List<PostResponseDTO> getPostsByCategoryId(Integer catId);
+    void incrementLikes(int postId, int userId);
 }

@@ -37,6 +37,10 @@ spring:
                   uri: lb://TAXONOMY-SERVICE
                   predicates:
                       - Path=/taxonomy/**
+                - id: media-service
+                  uri: lb://MEDIA-SERVICE
+                  predicates:
+                      - Path=/media/**
 
 eureka:
     client:

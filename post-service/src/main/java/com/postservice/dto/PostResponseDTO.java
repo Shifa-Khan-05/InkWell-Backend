@@ -16,5 +16,6 @@ public class PostResponseDTO {
     private int readTimeMin;
     private int viewCount;
     private int likesCount;
+    private String featuredImageUrl; // ✅ Matches frontend postPayload
     private boolean isLikedByCurrentUser; // ✅ ADD THIS
 }

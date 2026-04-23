@@ -4,10 +4,8 @@ import com.postservice.dto.PostCreationDTO;
 import com.postservice.dto.PostResponseDTO;
 import com.postservice.service.PostService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.MediaType; // ✅ CORRECT IMPORT
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 @RestController
@@ -18,15 +16,16 @@ public class PostResource {
 
     private final PostService postService;
 
-    /**
-     * Requirement 2.3: Create a new post with Image Upload.
-     * Use @ModelAttribute to bind form-data (Text + File).
-     */
-    @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<PostResponseDTO> createPost(
-            @ModelAttribute PostCreationDTO postDto, 
-            @RequestParam(value = "image", required = false) MultipartFile image) {
-        return ResponseEntity.ok(postService.savePost(postDto, image));
+    @PostMapping("/create")
+    public ResponseEntity<PostResponseDTO> createPost(@RequestBody PostCreationDTO postDto) {
+        return ResponseEntity.ok(postService.createPost(postDto));
+    }
+
+    @PutMapping("/{postId}")
+    public ResponseEntity<PostResponseDTO> updatePost(
+            @PathVariable int postId, 
+            @RequestBody PostCreationDTO postDto) {
+        return ResponseEntity.ok(postService.updatePost(postId, postDto));
     }
 
     @GetMapping("/author/{authorId}")
@@ -37,21 +36,6 @@ public class PostResource {
     @GetMapping("/{id}")
     public ResponseEntity<PostResponseDTO> getById(@PathVariable int id) {
         return ResponseEntity.ok(postService.getPostById(id));
-    }
-
-    @PutMapping(value = "/{postId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<PostResponseDTO> updatePost(
-            @PathVariable int postId, 
-            @ModelAttribute PostCreationDTO postDto, 
-            @RequestParam(value = "image", required = false) MultipartFile image) {
-        // ✅ Use the savePost logic but for an existing ID
-        return ResponseEntity.ok(postService.updateExistingPost(postId, postDto, image));
-    }
-
-    @DeleteMapping("/{postId}")
-    public ResponseEntity<Void> deletePost(@PathVariable int postId) {
-        postService.deletePost(postId);
-        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/published")
@@ -66,6 +50,11 @@ public class PostResource {
         return ResponseEntity.ok(postService.getPostBySlug(slug, userId));
     }
 
+    @GetMapping("/category/{catId}")
+    public ResponseEntity<List<PostResponseDTO>> getByCategoryId(@PathVariable Integer catId) {
+        return ResponseEntity.ok(postService.getPostsByCategoryId(catId));
+    }
+
     @PostMapping("/{postId}/like")
     public ResponseEntity<Void> incrementLikes(
             @PathVariable int postId, 
@@ -73,8 +62,10 @@ public class PostResource {
         postService.incrementLikes(postId, userId);
         return ResponseEntity.ok().build();
     }
-    @GetMapping("/category/{catId}")
-    public ResponseEntity<List<PostResponseDTO>> getByCategoryId(@PathVariable Integer catId) {
-        return ResponseEntity.ok(postService.getPostsByCategoryId(catId));
+
+    @DeleteMapping("/{postId}")
+    public ResponseEntity<Void> deletePost(@PathVariable int postId) {
+        postService.deletePost(postId);
+        return ResponseEntity.noContent().build();
     }
 }

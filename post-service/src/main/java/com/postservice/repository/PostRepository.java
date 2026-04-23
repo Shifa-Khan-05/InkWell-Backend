@@ -33,4 +33,6 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
 
 	
 	List<Post> findByCategoryId(Integer categoryId);
+
+	boolean existsBySlug(String baseSlug);
 }

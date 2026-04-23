@@ -30,6 +30,7 @@ public class Post {
     private String content; 
 
     private String excerpt;
+    @Column(length = 1000)
     private String featuredImageUrl;
     private String status; 
 

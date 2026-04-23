@@ -1,18 +1,16 @@
 package com.postservice.dto;
 
 import lombok.Data;
-import lombok.Getter;
+import java.util.List;
 
 @Data
-@Getter
-
 public class PostCreationDTO {
 	private String title;
 	private String content;
 	private String excerpt;
-	private String featuredImageUrl;
 	private int authorId;
-	private String status; //
-	private Integer categoryId; // ✅ MUST MATCH THIS NAME
-	
+	private String status;
+	private Integer categoryId;
+	private List<Integer> tagIds;
+	private String featuredImageUrl; 
 }
