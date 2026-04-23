@@ -8,19 +8,26 @@ import java.time.LocalDateTime;
 @Table(name = "subscribers")
 @Data
 public class Subscriber {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
 
-    @Column(unique = true, nullable = false)
-    private String email;
+	@Column(unique = true, nullable = false)
+	private String email;
 
-    private LocalDateTime subscribedAt;
+	private LocalDateTime subscribedAt;
 
-    private boolean active = true;
+	private boolean active = true;
 
-    @PrePersist
-    protected void onCreate() {
-        subscribedAt = LocalDateTime.now();
-    }
+	@PrePersist
+	protected void onCreate() {
+		subscribedAt = LocalDateTime.now();
+	}
+
+	// Inside Subscriber.java
+	@Column(nullable = false)
+	private String status = "PENDING"; // PENDING, ACTIVE
+
+	@Column(unique = true)
+	private String verificationToken;
 }
