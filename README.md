@@ -1,211 +1,205 @@
-🛡️ InkWell Post Service
+# 🏷️ InkWell Taxonomy Service
 
----
+The **Taxonomy Service** is a foundational microservice in the InkWell Blogging Platform responsible for **content classification, organization, and discoverability**. It manages both **hierarchical categories** and **dynamic tagging**, enabling efficient navigation, filtering, and SEO optimization across the platform.
 
-The **Post-Service** is a core microservice of the InkWell blogging platform. It manages the **entire content lifecycle**, from drafting stories to publishing them for public engagement.
+## 📖 Overview
 
----
+In a microservices architecture, **content and classification are decoupled**.
 
-## 📌 Overview
+The Taxonomy Service acts as a **central metadata engine**, allowing:
 
-The Post-Service powers the storytelling experience in InkWell by enabling:
+* Posts to be categorized in structured hierarchies
+* Tags to be assigned dynamically
+* Trending topics to be identified
+* SEO-friendly URLs to be generated
 
-* Draft creation and publishing workflows
-* SEO-friendly post management
-* Reader engagement (likes system)
-* Integration with Auth-Service for author details
-
-It plays a critical role in delivering a seamless writing and reading experience.
+This ensures a scalable and maintainable content discovery system.
 
 ---
 
 ## 🚀 Key Features
 
-### 📝 Draft & Publish Workflow
+### 📂 Hierarchical Categories
 
-* Authors can create posts as **DRAFT**
-* Publish posts to make them visible in the public feed
-* Supports iterative content creation
+* Supports **parent-child relationships**
+* Enables deep content structuring:
 
-### 🧠 Intelligent Metadata
+  ```
+  Technology → Backend → Spring Boot
+  ```
+* Each category has a **unique slug** for SEO
 
-* Auto-generates **SEO-friendly slugs**
-* Calculates **estimated reading time** based on word count
+---
 
-### ❤️ Smart Engagement System
+### 🏷️ Dynamic Tagging System
 
-* Ensures **one-user-one-like rule**
-* Supports **like/unlike toggle**
-* Prevents duplicate likes using database constraints
+* Flat structure (no hierarchy)
+* Multiple tags per post
+* Fast retrieval and filtering
 
-### 🔗 Author Enrichment
+---
 
-* Uses **Feign Client** to fetch author details from Auth-Service
-* Maps `authorId` → real user identity
+### 📊 Trending Tags Engine
 
-### 🌐 Slug-Based Routing
+* Tracks `postCount` for each tag
+* Sorts tags by usage frequency
+* Enables **Trending Topics UI**
 
-* Clean and SEO-friendly URLs:
+---
 
-```id="n7g1jv"
-/posts/my-first-story
+### 🔢 Live Post Counters
+
+* Maintains `postCount` for:
+
+  * Categories
+  * Tags
+* Updated when posts are created/updated
+
+---
+
+### 🔍 SEO Optimization
+
+* Auto-generates **slug-based URLs**
+
+  ```
+  /category/spring-boot
+  /tag/microservices
+  ```
+* Ensures uniqueness to avoid conflicts
+
+---
+
+## 🏗️ Architecture
+
+```text
+        ┌──────────────┐
+        │ API Gateway  │
+        └──────┬───────┘
+               │
+     ┌─────────▼─────────┐
+     │ Taxonomy Service  │
+     └─────────┬─────────┘
+               │
+     ┌─────────▼─────────┐
+     │   Post Service    │
+     └───────────────────┘
 ```
 
----
+### Key Design Principles
 
-## 🛠️ Tech Stack
-
-| Layer         | Technology        |
-| ------------- | ----------------- |
-| Language      | Java 17           |
-| Framework     | Spring Boot 3.2.5 |
-| Database      | MySQL             |
-| ORM           | Hibernate (JPA)   |
-| Auditing      | Hibernate Envers  |
-| Communication | OpenFeign         |
-| Discovery     | Eureka Server     |
+* Loose coupling
+* Single responsibility
+* Scalable metadata management
+* Independent database
 
 ---
 
-## 🏗️ Architecture Highlights
+## 🗄️ Data Model
 
-* Microservice-based design
-* Service discovery via Eureka
-* Inter-service communication via Feign
-* Transaction-safe engagement system
+### 📘 Category Entity
+
+| Field            | Description           |
+| ---------------- | --------------------- |
+| categoryId       | Primary key           |
+| name             | Category name         |
+| slug             | Unique URL identifier |
+| description      | Category details      |
+| parentCategoryId | For hierarchy         |
+| postCount        | Number of posts       |
+| createdAt        | Timestamp             |
 
 ---
 
-## ⚙️ Technical Implementation
+### 🏷️ Tag Entity
 
-### ❤️ Engagement Persistence
-
-To ensure **data integrity and consistency**, likes are stored in a separate table:
-
-```java id="l2m9pw"
-@Table(name = "post_likes", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"post_id", "user_id"})
-})
-public class PostLike {
-    // fields, getters, setters
-}
-```
-
-### 🔒 Key Design Principles
-
-* **Atomic Transactions** using `@Transactional`
-* Prevents duplicate likes
-* Ensures consistency between:
-
-  * Like count
-  * Individual user engagement
+| Field     | Description       |
+| --------- | ----------------- |
+| tagId     | Primary key       |
+| name      | Tag name          |
+| slug      | Unique identifier |
+| postCount | Usage count       |
+| createdAt | Timestamp         |
 
 ---
 
 ## 📡 API Endpoints
 
-| Method   | Endpoint                           | Description                        |
-| -------- | ---------------------------------- | ---------------------------------- |
-| **POST** | `/posts/create`                    | Create a new post (default: DRAFT) |
-| **GET**  | `/posts/published`                 | Get all published posts            |
-| **GET**  | `/posts/slug/{slug}?userId={id}`   | Get post details + like status     |
-| **POST** | `/posts/{postId}/like?userId={id}` | Toggle like/unlike                 |
+### 📂 Category APIs
+
+| Method | Endpoint                      | Description          |
+| ------ | ----------------------------- | -------------------- |
+| POST   | `/taxonomy/categories`        | Create category      |
+| GET    | `/taxonomy/categories`        | Get all categories   |
+| GET    | `/taxonomy/categories/{slug}` | Get category by slug |
+| PUT    | `/taxonomy/categories/{id}`   | Update category      |
+| DELETE | `/taxonomy/categories/{id}`   | Delete category      |
 
 ---
 
-## ⚙️ Setup & Installation
+### 🏷️ Tag APIs
 
-### 1️⃣ Prerequisites
-
-* Java 17
-* Maven
-* MySQL
-* Eureka Server running on `8761`
-
----
-
-### 2️⃣ Database Configuration
-
-Update `application.properties`:
-
-```properties id="p8y2wk"
-spring.datasource.url=jdbc:mysql://localhost:3306/inkwell_post
-spring.datasource.username=your_username
-spring.datasource.password=your_password
-
-spring.jpa.hibernate.ddl-auto=update
-spring.jpa.show-sql=true
-```
+| Method | Endpoint                  | Description       |
+| ------ | ------------------------- | ----------------- |
+| POST   | `/taxonomy/tags`          | Create tag        |
+| GET    | `/taxonomy/tags`          | Get all tags      |
+| GET    | `/taxonomy/tags/trending` | Get trending tags |
+| DELETE | `/taxonomy/tags/{id}`     | Delete tag        |
 
 ---
 
-### 3️⃣ Important Migration Note
+### 🔗 Post-Tag Association
 
-If migrating from older versions:
-
-```sql id="k4twlq"
-DROP TABLE IF EXISTS post_likes;
-```
-
----
-
-### 4️⃣ Run the Service
-
-```bash id="n2fjg7"
-mvn clean install
-mvn spring-boot:run
-```
+| Method | Endpoint                                | Description         |
+| ------ | --------------------------------------- | ------------------- |
+| POST   | `/taxonomy/posts/{postId}/tags`         | Assign tags to post |
+| DELETE | `/taxonomy/posts/{postId}/tags/{tagId}` | Remove tag          |
 
 ---
 
-## 🔗 Service Dependencies
+## 🔄 Service Communication
 
-* **Auth-Service** → Fetch author details
-* **Eureka Server** → Service discovery
+### Flow
+
+1. Post-Service creates/updates post
+2. Calls Taxonomy Service
+3. Tags/categories assigned
+4. `postCount` updated
+5. Response returned
 
 ---
 
-## 🧪 Example Request
+## 🔒 Security & Validation
 
-```bash id="o3ql2n"
-curl -X POST http://localhost:8082/posts/create \
--H "Content-Type: application/json" \
--d '{"title":"My First Blog","content":"Hello InkWell!"}'
-```
+* Ensures **unique slugs**
+* Validates parent-child relationships
+* Prevents duplicate tags
+* Sanitizes inputs for SEO
+
+---
+
+## ⚡ Performance Considerations
+
+* Indexed columns:
+
+  * `slug`
+  * `categoryId`
+  * `tagId`
+* Precomputed `postCount` for fast reads
+* Stateless service → horizontally scalable
 
 ---
 
 ## 📁 Project Structure
 
-```id="b7x2mr"
-src/main/java/com/inkwell/post
+```text
+taxonomy-service
 │
 ├── controller      # REST APIs
 ├── service         # Business logic
-├── repository      # JPA repositories
-├── entity          # Database models
-├── dto             # Request/Response objects
-├── client          # Feign clients
+├── repository      # JPA interfaces
+├── entity          # Category & Tag models
+├── dto             # Data transfer objects
 └── config          # Configurations
 ```
-
----
-
-## 🔒 Design Considerations
-
-* Data consistency using transactions
-* Scalable microservice communication
-* Clean separation of concerns
-* SEO optimization via slug system
-
----
-
-## 🚧 Future Enhancements
-
-* Comments system
-* Bookmarking feature
-* Trending algorithm
-* Tag/category support
-* Search & filtering
 
 ---
