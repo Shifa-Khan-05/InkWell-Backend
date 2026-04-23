@@ -1,55 +1,77 @@
-🛡️ InkWell Post Service
+# 🖼️ InkWell Media Service
 
----
-
-The **Post-Service** is a core microservice of the InkWell blogging platform. It manages the **entire content lifecycle**, from drafting stories to publishing them for public engagement.
+The **Media-Service** is a dedicated microservice in the InkWell platform responsible for **handling all media assets** such as images (avatars, post covers, inline media). It ensures efficient storage, retrieval, and delivery of binary data while keeping other services lightweight and focused.
 
 ---
 
 ## 📌 Overview
 
-The Post-Service powers the storytelling experience in InkWell by enabling:
+In a microservices architecture, storing files directly inside services like Post-Service leads to performance and scalability issues.
 
-* Draft creation and publishing workflows
-* SEO-friendly post management
-* Reader engagement (likes system)
-* Integration with Auth-Service for author details
+The Media-Service solves this by:
 
-It plays a critical role in delivering a seamless writing and reading experience.
+* Handling **file uploads separately**
+* Generating **public URLs for assets**
+* Managing **storage and retrieval efficiently**
+* Providing **secure and scalable media access**
 
 ---
 
-## 🚀 Key Features
+## 🚀 Core Features
 
-### 📝 Draft & Publish Workflow
+### 📤 Multipart File Upload
 
-* Authors can create posts as **DRAFT**
-* Publish posts to make them visible in the public feed
-* Supports iterative content creation
+* Supports formats:
 
-### 🧠 Intelligent Metadata
+  * JPG, PNG, WEBP, AVIF
+* Handles `multipart/form-data` requests efficiently
 
-* Auto-generates **SEO-friendly slugs**
-* Calculates **estimated reading time** based on word count
+---
 
-### ❤️ Smart Engagement System
+### 💾 Local File Storage
 
-* Ensures **one-user-one-like rule**
-* Supports **like/unlike toggle**
-* Prevents duplicate likes using database constraints
+* Files stored in structured directory:
 
-### 🔗 Author Enrichment
-
-* Uses **Feign Client** to fetch author details from Auth-Service
-* Maps `authorId` → real user identity
-
-### 🌐 Slug-Based Routing
-
-* Clean and SEO-friendly URLs:
-
-```id="n7g1jv"
-/posts/my-first-story
+```bash
+uploads/media/
 ```
+
+* Uses **Java NIO** for file operations
+
+---
+
+### 🔗 URL Handshake System
+
+* Generates public URL instantly after upload
+* Example:
+
+```bash
+http://localhost:8087/media/display/12345_image.jpg
+```
+
+* Used directly by Post-Service
+
+---
+
+### 🧹 Soft Delete Mechanism
+
+* Uses `isDeleted` flag instead of physical deletion
+* Prevents broken references in Post-Service
+
+---
+
+### 🛡️ Admin Controls
+
+* View all media
+* Moderate uploaded content
+* Manage assets globally
+
+---
+
+### 🖥️ Dynamic Image Streaming
+
+* Streams images via endpoint
+* Does NOT expose actual file path
 
 ---
 
@@ -60,152 +82,143 @@ It plays a critical role in delivering a seamless writing and reading experience
 | Language      | Java 17           |
 | Framework     | Spring Boot 3.2.5 |
 | Database      | MySQL             |
-| ORM           | Hibernate (JPA)   |
-| Auditing      | Hibernate Envers  |
-| Communication | OpenFeign         |
-| Discovery     | Eureka Server     |
+| ORM           | Spring Data JPA   |
+| File Handling | Java NIO          |
+| Discovery     | Eureka Client     |
+| Utilities     | Lombok            |
 
 ---
 
-## 🏗️ Architecture Highlights
+## 🏗️ Architecture
 
-* Microservice-based design
-* Service discovery via Eureka
-* Inter-service communication via Feign
-* Transaction-safe engagement system
-
----
-
-## ⚙️ Technical Implementation
-
-### ❤️ Engagement Persistence
-
-To ensure **data integrity and consistency**, likes are stored in a separate table:
-
-```java id="l2m9pw"
-@Table(name = "post_likes", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"post_id", "user_id"})
-})
-public class PostLike {
-    // fields, getters, setters
-}
+```text
+Frontend → Media-Service → File System
+                    ↓
+              Public URL → Post-Service
 ```
-
-### 🔒 Key Design Principles
-
-* **Atomic Transactions** using `@Transactional`
-* Prevents duplicate likes
-* Ensures consistency between:
-
-  * Like count
-  * Individual user engagement
 
 ---
 
 ## 📡 API Endpoints
 
-| Method   | Endpoint                           | Description                        |
-| -------- | ---------------------------------- | ---------------------------------- |
-| **POST** | `/posts/create`                    | Create a new post (default: DRAFT) |
-| **GET**  | `/posts/published`                 | Get all published posts            |
-| **GET**  | `/posts/slug/{slug}?userId={id}`   | Get post details + like status     |
-| **POST** | `/posts/{postId}/like?userId={id}` | Toggle like/unlike                 |
+### 📤 Upload Media
+
+```http
+POST /media/upload
+```
+
+**Request:**
+
+* file (image)
+* uploaderId
+* altText
+
+**Response:**
+
+* Media metadata + public URL
+
+---
+
+### 📥 Fetch Media
+
+| Method | Endpoint                | Description            |
+| ------ | ----------------------- | ---------------------- |
+| GET    | `/media/all`            | Get all assets (Admin) |
+| GET    | `/media/uploader/{id}`  | Get user uploads       |
+| GET    | `/media/display/{name}` | Stream image           |
+| GET    | `/media/detail/{id}`    | Get metadata           |
+
+---
+
+### ✏️ Update / Delete
+
+| Method | Endpoint          | Description     |
+| ------ | ----------------- | --------------- |
+| PUT    | `/media/{id}/alt` | Update alt text |
+| DELETE | `/media/{id}`     | Soft delete     |
+
+---
+
+## 🔄 Media Upload Flow (Important 🔥)
+
+1. User selects image in frontend
+2. Frontend sends request to Media-Service
+3. Media-Service:
+
+   * Saves file
+   * Generates URL
+4. URL returned to frontend
+5. Frontend sends URL to Post-Service
+6. Post stored with image URL
+
+👉 This keeps Post-Service lightweight
 
 ---
 
 ## ⚙️ Setup & Installation
 
-### 1️⃣ Prerequisites
+### ✅ Prerequisites
 
 * Java 17
 * Maven
 * MySQL
-* Eureka Server running on `8761`
+* Eureka Server (8761)
 
 ---
 
-### 2️⃣ Database Configuration
+### 🛢️ Database Setup
 
-Update `application.properties`:
+```sql
+CREATE DATABASE inkwell_media;
+```
 
-```properties id="p8y2wk"
-spring.datasource.url=jdbc:mysql://localhost:3306/inkwell_post
-spring.datasource.username=your_username
+---
+
+### ⚙️ Configuration
+
+```properties
+server.port=8087
+spring.application.name=media-service
+
+spring.datasource.url=jdbc:mysql://localhost:3306/inkwell_media
+spring.datasource.username=root
 spring.datasource.password=your_password
 
-spring.jpa.hibernate.ddl-auto=update
-spring.jpa.show-sql=true
+spring.servlet.multipart.max-file-size=5MB
+spring.servlet.multipart.max-request-size=5MB
 ```
-
----
-
-### 3️⃣ Important Migration Note
-
-If migrating from older versions:
-
-```sql id="k4twlq"
-DROP TABLE IF EXISTS post_likes;
-```
-
----
-
-### 4️⃣ Run the Service
-
-```bash id="n2fjg7"
-mvn clean install
-mvn spring-boot:run
-```
-
----
-
-## 🔗 Service Dependencies
-
-* **Auth-Service** → Fetch author details
-* **Eureka Server** → Service discovery
-
----
-
-## 🧪 Example Request
-
-```bash id="o3ql2n"
-curl -X POST http://localhost:8082/posts/create \
--H "Content-Type: application/json" \
--d '{"title":"My First Blog","content":"Hello InkWell!"}'
-```
-
 ---
 
 ## 📁 Project Structure
 
-```id="b7x2mr"
-src/main/java/com/inkwell/post
+```text
+media-service
 │
 ├── controller      # REST APIs
+├── entity          # Media entity
+├── repository      # JPA layer
 ├── service         # Business logic
-├── repository      # JPA repositories
-├── entity          # Database models
-├── dto             # Request/Response objects
-├── client          # Feign clients
-└── config          # Configurations
+├── config          # Configurations
 ```
 
 ---
 
-## 🔒 Design Considerations
+## 🔒 Security Considerations
 
-* Data consistency using transactions
-* Scalable microservice communication
-* Clean separation of concerns
-* SEO optimization via slug system
+* Validate file types
+* Limit file size
+* Prevent path traversal
+* Restrict admin endpoints
 
 ---
 
-## 🚧 Future Enhancements
+## ⚡ Performance & Scalability
 
-* Comments system
-* Bookmarking feature
-* Trending algorithm
-* Tag/category support
-* Search & filtering
+* Lightweight URL-based linking
+* No binary storage in Post-Service
+* Ready for:
+
+  * AWS S3
+  * Cloud storage
 
 ---
