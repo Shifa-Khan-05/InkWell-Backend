@@ -13,5 +13,6 @@ public class PostCreationDTO {
 	private String featuredImageUrl;
 	private int authorId;
 	private String status; //
+	private Integer categoryId; // ✅ MUST MATCH THIS NAME
 	
 }

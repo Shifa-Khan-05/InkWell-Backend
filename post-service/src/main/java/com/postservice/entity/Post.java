@@ -2,59 +2,63 @@ package com.postservice.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.time.LocalDateTime;
+import java.util.List;
 
-/**
- * Post Entity Manages the lifecycle and metadata of a blog article.
- */
 @Entity
 @Table(name = "posts")
-@Data
+@Data // ✅ This handles all Getters, Setters, ToString, and Equals
 @NoArgsConstructor
 @AllArgsConstructor
-@Getter
 public class Post {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private int postId;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int postId;
 
-	@Column(nullable = false)
-	private int authorId; // Linked to Auth-Service
+    @Column(nullable = false)
+    private int authorId; 
 
-	@Column(nullable = false)
-	private String title;
+    @Column(nullable = false)
+    private String title;
 
-	@Column(unique = true, nullable = false)
-	private String slug; // SEO-friendly URL
+    @Column(unique = true, nullable = false)
+    private String slug; 
 
-	@Lob
-	private String content; // Rich content
+    @Lob
+    @Column(columnDefinition = "LONGTEXT")
+    private String content; 
 
-	private String excerpt;
-	private String featuredImageUrl;
+    private String excerpt;
+    private String featuredImageUrl;
+    private String status; 
 
-	private String status; // DRAFT, PUBLISHED, UNPUBLISHED, ARCHIVED
+    // ✅ This field MUST exist for setCategoryId() to work
+    @Column(name = "category_id")
+    private Integer categoryId;
 
-	private int readTimeMin;
-	private int viewCount = 0;
-	
-	@Column(name = "likes_count")
-	private int likesCount = 0; // ✅ Initialize to 0 to prevent null/NaN issues
+    @ElementCollection
+    @CollectionTable(name = "post_tags", joinColumns = @JoinColumn(name = "post_id"))
+    @Column(name = "tag_id")
+    private List<Integer> tagIds;
 
-	private LocalDateTime createdAt;
-	private LocalDateTime updatedAt;
-	private LocalDateTime publishedAt;
+    private int readTimeMin;
+    private int viewCount = 0;
+    
+    @Column(name = "likes_count")
+    private int likesCount = 0; 
 
-	// Automatically set timestamps
-	@PrePersist
-	public void onCreate() {
-		this.createdAt = LocalDateTime.now();
-	}
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private LocalDateTime publishedAt;
 
-	@PreUpdate
-	public void onUpdate() {
-		this.updatedAt = LocalDateTime.now();
-	}
+    @PrePersist
+    public void onCreate() {
+        this.createdAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    public void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
 }

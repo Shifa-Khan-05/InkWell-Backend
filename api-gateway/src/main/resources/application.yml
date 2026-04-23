@@ -1,36 +1,44 @@
 server:
-  port: 8080
+    port: 8080
 
 spring:
-  application:
-    name: api-gateway
-  cloud:
-    gateway:
-      default-filters:
-        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials # ✅ This removes duplicates!
-      globalcors:
-        add-to-simple-url-handler-mapping: true
-        cors-configurations:
-          '[/**]':
-            allowedOrigins: "http://localhost:5173"
-            allowedMethods: "*"
-            allowedHeaders: "*"
-            allowCredentials: true
-      routes:
-        - id: auth-service
-          uri: lb://AUTH-SERVICE
-          predicates:
-            - Path=/auth/**
-        - id: post-service
-          uri: lb://POST-SERVICE
-          predicates:
-            - Path=/posts/**
-        - id: comment-service
-          uri: lb://COMMENT-SERVICE
-          predicates:
-            - Path=/comments/**
+    application:
+        name: api-gateway
+    cloud:
+        gateway:
+            default-filters:
+                - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials
+            globalcors:
+                add-to-simple-url-handler-mapping: true
+                cors-configurations:
+                    "[/**]":
+                        allowedOrigins: "http://localhost:5173"
+                        allowedMethods: "*"
+                        allowedHeaders: "*"
+                        allowCredentials: true
+            routes:
+                - id: auth-service
+                  uri: lb://AUTH-SERVICE
+                  predicates:
+                      - Path=/auth/**
+
+                - id: post-service
+                  uri: lb://POST-SERVICE
+                  predicates:
+                      - Path=/posts/**
+
+                - id: comment-service
+                  uri: lb://COMMENT-SERVICE
+                  predicates:
+                      - Path=/comments/**
+
+                # ✅ FIXED: Correct indentation and URI placement
+                - id: taxonomy-service
+                  uri: lb://TAXONOMY-SERVICE
+                  predicates:
+                      - Path=/taxonomy/**
 
 eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
+    client:
+        service-url:
+            defaultZone: http://localhost:8761/eureka/
