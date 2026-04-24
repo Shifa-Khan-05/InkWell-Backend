@@ -38,10 +38,13 @@ public class User {
 	private String avatarUrl; //
 
 	private String provider; // LOCAL, GOOGLE, GITHUB
-	
+
 	private boolean isActive = true; //
 
 	private LocalDateTime createdAt = LocalDateTime.now(); //
-	
-    private String profileImageUrl;
+
+	private String profileImageUrl;
+
+	@Column(name = "membership_level")
+	private String membershipLevel = "FREE";
 }

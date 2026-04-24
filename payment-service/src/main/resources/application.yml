@@ -1,0 +1,20 @@
+server:
+    port: 8089
+
+spring:
+    application:
+        name: payment-service
+    config:
+        # This line tells the service to look one folder up for the .env file
+        import: "optional:file:../.env[.properties]"
+
+# ✅ Map the .env variables to the names used in your Java @Value annotations
+razorpay:
+    key:
+        id: ${RAZORPAY_KEY_ID}
+        secret: ${RAZORPAY_KEY_SECRET}
+
+eureka:
+    client:
+        service-url:
+            defaultZone: http://localhost:8761/eureka/

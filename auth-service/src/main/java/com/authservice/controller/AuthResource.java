@@ -24,6 +24,19 @@ public class AuthResource {
 	private final AuthService authService;
 	private final UserRepository userRepository;
 
+	// Inside AuthResource.java
+
+	@PutMapping("/users/{id}/upgrade")
+	public ResponseEntity<?> upgradeUser(@PathVariable Integer id) {
+		try {
+			// ✅ Changed from userService to authService
+			authService.upgradeToPremium(id);
+			return ResponseEntity.ok(Map.of("status", "success", "message", "User upgraded to PREMIUM successfully"));
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Upgrade failed: " + e.getMessage());
+		}
+	}
+
 	@PostMapping("/login")
 	public ResponseEntity<?> login(@RequestBody Map<String, String> creds) {
 		try {

@@ -153,4 +153,17 @@ public class AuthServiceImpl implements AuthService {
 	            .map(User::getUserId) // Or .getId() depending on your entity
 	            .orElse(null);
 	}
+	
+	// Add this method to AuthServiceImpl.java
+	@Override
+	public void upgradeToPremium(Integer userId) {
+	    User user = userRepository.findById(userId)
+	            .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+	    
+	    // ✅ Change role to ROLE_PREMIUM
+	    user.setRole("ROLE_PREMIUM");
+	    userRepository.save(user);
+	    
+	    System.out.println("User " + userId + " has been upgraded to PREMIUM successfully.");
+	}
 }

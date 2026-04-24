@@ -30,4 +30,6 @@ public interface AuthService {
 	void deleteUser(Integer userId);
 
 	Integer getUserIdByEmail(String email);
+
+	void upgradeToPremium(Integer userId);
 }
