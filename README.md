@@ -1,211 +1,373 @@
-🛡️ InkWell Post Service
+# 💳 InkWell Payment Service
 
----
-
-The **Post-Service** is a core microservice of the InkWell blogging platform. It manages the **entire content lifecycle**, from drafting stories to publishing them for public engagement.
+The **Payment Service** is a critical microservice within the InkWell Blogging Platform responsible for managing **premium subscriptions, secure payment processing, and user role upgrades**. It integrates with **Razorpay** for payment gateway operations and communicates with the **Auth-Service** using **OpenFeign** to upgrade users to premium access after successful payment verification.
 
 ---
 
 ## 📌 Overview
 
-The Post-Service powers the storytelling experience in InkWell by enabling:
+In the InkWell ecosystem, premium features such as exclusive content, advanced writing tools, and enhanced visibility require a secure and reliable payment system.
 
-* Draft creation and publishing workflows
-* SEO-friendly post management
-* Reader engagement (likes system)
-* Integration with Auth-Service for author details
+The Payment Service acts as the **financial transaction engine** by:
 
-It plays a critical role in delivering a seamless writing and reading experience.
+* Creating secure payment orders
+* Verifying payment authenticity
+* Maintaining transaction records
+* Upgrading user roles after successful payments
+* Ensuring secure service-to-service communication
+
+This service keeps payment logic completely separated from the Auth-Service and Post-Service, following proper **microservices architecture principles**.
 
 ---
 
 ## 🚀 Key Features
 
-### 📝 Draft & Publish Workflow
+### 💰 Razorpay Order Creation
 
-* Authors can create posts as **DRAFT**
-* Publish posts to make them visible in the public feed
-* Supports iterative content creation
+* Generates secure and unique Razorpay Order IDs
+* Supports dynamic payment amounts
+* Prevents duplicate transactions
 
-### 🧠 Intelligent Metadata
+---
 
-* Auto-generates **SEO-friendly slugs**
-* Calculates **estimated reading time** based on word count
+### 🔐 Payment Verification
 
-### ❤️ Smart Engagement System
+* Validates:
 
-* Ensures **one-user-one-like rule**
-* Supports **like/unlike toggle**
-* Prevents duplicate likes using database constraints
+  * `razorpay_payment_id`
+  * `razorpay_order_id`
+  * `razorpay_signature`
 
-### 🔗 Author Enrichment
+* Prevents fake or tampered transactions
 
-* Uses **Feign Client** to fetch author details from Auth-Service
-* Maps `authorId` → real user identity
+---
 
-### 🌐 Slug-Based Routing
+### 🔗 Auth-Service Integration
 
-* Clean and SEO-friendly URLs:
+* Uses **OpenFeign Client**
+* Automatically upgrades user role after successful payment:
 
-```id="n7g1jv"
-/posts/my-first-story
+```id="pmt001"
+ROLE_USER → ROLE_PREMIUM
 ```
+
+---
+
+### 📄 Transaction Persistence
+
+* Stores payment logs in MySQL
+* Maintains transaction history for:
+
+  * Auditing
+  * Refund handling
+  * Admin reporting
+
+---
+
+### ⚠️ Error Handling
+
+* Handles:
+
+  * Payment failures
+  * Signature mismatch
+  * Gateway timeout
+  * Feign communication failure
+
+---
+
+### 🛡️ Secure Internal Communication
+
+* Service discovery using Eureka
+* Secure inter-service communication within the cluster
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Layer         | Technology        |
-| ------------- | ----------------- |
-| Language      | Java 17           |
-| Framework     | Spring Boot 3.2.5 |
-| Database      | MySQL             |
-| ORM           | Hibernate (JPA)   |
-| Auditing      | Hibernate Envers  |
-| Communication | OpenFeign         |
-| Discovery     | Eureka Server     |
+| Layer           | Technology        |
+| --------------- | ----------------- |
+| Language        | Java 17           |
+| Framework       | Spring Boot 3.x   |
+| Database        | MySQL             |
+| ORM             | Spring Data JPA   |
+| Payment Gateway | Razorpay Java SDK |
+| Communication   | OpenFeign         |
+| Discovery       | Eureka Client     |
+| Utilities       | Lombok            |
 
 ---
 
-## 🏗️ Architecture Highlights
+## 🏗️ System Architecture
 
-* Microservice-based design
-* Service discovery via Eureka
-* Inter-service communication via Feign
-* Transaction-safe engagement system
-
----
-
-## ⚙️ Technical Implementation
-
-### ❤️ Engagement Persistence
-
-To ensure **data integrity and consistency**, likes are stored in a separate table:
-
-```java id="l2m9pw"
-@Table(name = "post_likes", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"post_id", "user_id"})
-})
-public class PostLike {
-    // fields, getters, setters
-}
+```text id="pmt002"
+Frontend → Payment Service → Razorpay
+                    ↓
+               Auth-Service
+                    ↓
+              User Role Upgrade
 ```
 
-### 🔒 Key Design Principles
+---
 
-* **Atomic Transactions** using `@Transactional`
-* Prevents duplicate likes
-* Ensures consistency between:
+## 🗄️ Data Model
 
-  * Like count
-  * Individual user engagement
+### 📘 Transaction Entity
+
+| Field             | Description                |
+| ----------------- | -------------------------- |
+| transactionId     | Primary key                |
+| userId            | User making payment        |
+| amount            | Payment amount             |
+| razorpayOrderId   | Gateway order ID           |
+| razorpayPaymentId | Payment confirmation ID    |
+| status            | SUCCESS / FAILED / PENDING |
+| paymentMethod     | Card / UPI / Net Banking   |
+| createdAt         | Transaction timestamp      |
 
 ---
 
 ## 📡 API Endpoints
 
-| Method   | Endpoint                           | Description                        |
-| -------- | ---------------------------------- | ---------------------------------- |
-| **POST** | `/posts/create`                    | Create a new post (default: DRAFT) |
-| **GET**  | `/posts/published`                 | Get all published posts            |
-| **GET**  | `/posts/slug/{slug}?userId={id}`   | Get post details + like status     |
-| **POST** | `/posts/{postId}/like?userId={id}` | Toggle like/unlike                 |
+---
+
+### 🔹 Create Payment Order
+
+```http id="pmt003"
+POST /payments/create-order
+```
+
+### Request Body
+
+```json id="pmt004"
+{
+  "amount": 499
+}
+```
+
+### Description
+
+Creates a new Razorpay order and returns the generated Order ID.
 
 ---
 
-## ⚙️ Setup & Installation
+### 🔹 Verify Payment
 
-### 1️⃣ Prerequisites
+```http id="pmt005"
+POST /payments/verify
+```
+
+### Request Body
+
+```json id="pmt006"
+{
+  "razorpay_payment_id": "pay_test_123",
+  "razorpay_order_id": "order_test_456",
+  "razorpay_signature": "sig_abc_789",
+  "userId": "21"
+}
+```
+
+### Description
+
+Verifies the payment signature and upgrades the user to:
+
+```id="pmt007"
+ROLE_PREMIUM
+```
+
+---
+
+## 🔄 Payment Workflow (Important 🔥)
+
+### Step-by-Step Flow
+
+### 1️⃣ Frontend Requests Order
+
+React frontend sends request to:
+
+```id="pmt008"
+/payments/create-order
+```
+
+---
+
+### 2️⃣ Payment Service Creates Order
+
+* Razorpay SDK creates order
+* Returns:
+
+```id="pmt009"
+order_id
+```
+
+---
+
+### 3️⃣ User Completes Payment
+
+* Razorpay Checkout opens
+* User pays via:
+
+  * UPI
+  * Card
+  * Net Banking
+
+---
+
+### 4️⃣ Frontend Sends Verification
+
+Frontend sends:
+
+* payment_id
+* order_id
+* signature
+* userId
+
+to:
+
+```id="pmt010"
+/payments/verify
+```
+
+---
+
+### 5️⃣ Backend Verifies Signature
+
+If valid:
+
+✅ Payment success
+
+If invalid:
+
+❌ Reject transaction
+
+---
+
+### 6️⃣ Feign Client Calls Auth-Service
+
+```java id="pmt011"
+authClient.upgradeUser(userId);
+```
+
+---
+
+### 7️⃣ User Becomes Premium 🎉
+
+```id="pmt012"
+ROLE_PREMIUM
+```
+
+---
+
+## ⚙️ Configuration
+
+### application.properties
+
+```properties id="pmt013"
+server.port=8089
+spring.application.name=PAYMENT-SERVICE
+
+# Razorpay Credentials
+razorpay.key.id=rzp_test_your_key
+razorpay.key.secret=your_secret_key
+
+# Database
+spring.datasource.url=jdbc:mysql://localhost:3306/inkwell_payment
+spring.datasource.username=root
+spring.datasource.password=your_password
+
+# Eureka
+eureka.client.service-url.defaultZone=http://localhost:8761/eureka/
+
+# Auth Service
+AUTH_SERVICE_URL=http://AUTH-SERVICE
+```
+
+---
+
+## 🚦 Setup & Installation
+
+### ✅ Prerequisites
 
 * Java 17
 * Maven
 * MySQL
+* Razorpay Test Account
 * Eureka Server running on `8761`
 
 ---
 
-### 2️⃣ Database Configuration
+### 🛢️ Database Setup
 
-Update `application.properties`:
-
-```properties id="p8y2wk"
-spring.datasource.url=jdbc:mysql://localhost:3306/inkwell_post
-spring.datasource.username=your_username
-spring.datasource.password=your_password
-
-spring.jpa.hibernate.ddl-auto=update
-spring.jpa.show-sql=true
+```sql id="pmt014"
+CREATE DATABASE inkwell_payment;
 ```
 
 ---
 
-### 3️⃣ Important Migration Note
+### ▶️ Run Application
 
-If migrating from older versions:
-
-```sql id="k4twlq"
-DROP TABLE IF EXISTS post_likes;
-```
-
----
-
-### 4️⃣ Run the Service
-
-```bash id="n2fjg7"
+```bash id="pmt015"
 mvn clean install
 mvn spring-boot:run
 ```
 
 ---
 
-## 🔗 Service Dependencies
+## 🧪 Testing
 
-* **Auth-Service** → Fetch author details
-* **Eureka Server** → Service discovery
+This service includes unit testing using:
 
----
+* JUnit 5
+* Mockito
 
-## 🧪 Example Request
+### Run Tests
 
-```bash id="o3ql2n"
-curl -X POST http://localhost:8082/posts/create \
--H "Content-Type: application/json" \
--d '{"title":"My First Blog","content":"Hello InkWell!"}'
+```bash id="pmt016"
+mvn test
 ```
+
+Tests cover:
+
+* Order creation logic
+* Payment verification
+* Signature validation
+* Feign client interaction
 
 ---
 
 ## 📁 Project Structure
 
-```id="b7x2mr"
-src/main/java/com/inkwell/post
+```text id="pmt017"
+payment-service
 │
-├── controller      # REST APIs
-├── service         # Business logic
-├── repository      # JPA repositories
-├── entity          # Database models
-├── dto             # Request/Response objects
-├── client          # Feign clients
-└── config          # Configurations
+├── client         # Feign Client
+├── config         # Razorpay config
+├── controller     # REST APIs
+├── dto            # Request/Response DTOs
+├── entity         # Transaction entity
+├── repository     # JPA layer
+└── service        # Business logic
 ```
 
 ---
 
-## 🔒 Design Considerations
+## 🔒 Security Considerations
 
-* Data consistency using transactions
-* Scalable microservice communication
-* Clean separation of concerns
-* SEO optimization via slug system
+* Signature verification mandatory
+* Secrets stored in `.env` / environment variables
+* Never expose Razorpay secret key
+* Secure Feign communication
+* Admin-level audit logs recommended
 
 ---
 
-## 🚧 Future Enhancements
+## ⚡ Future Enhancements
 
-* Comments system
-* Bookmarking feature
-* Trending algorithm
-* Tag/category support
-* Search & filtering
+* Refund handling
+* Subscription renewals
+* Invoice generation
+* Payment analytics dashboard
+* Webhook integration from Razorpay
+* Kafka event-driven payment confirmation
 
 ---
