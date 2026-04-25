@@ -22,6 +22,8 @@ public class Comment {
     private Integer postId;
     private Integer userId;
     
+    private Integer authorId;
+
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
     

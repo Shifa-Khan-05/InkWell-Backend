@@ -3,6 +3,7 @@ package com.postservice.service;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import com.postservice.client.AuthClient;
+import com.postservice.client.NotificationClient;
 import com.postservice.client.TaxonomyClient;
 import com.postservice.dto.PostCreationDTO;
 import com.postservice.dto.PostResponseDTO;
@@ -14,7 +15,9 @@ import com.postservice.repository.LikeRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,6 +29,7 @@ public class PostServiceImpl implements PostService {
     private final ModelMapper modelMapper;
     private final AuthClient authClient;
     private final TaxonomyClient taxonomyClient;
+    private final NotificationClient notificationClient;
 
     @Override
     @Transactional
@@ -184,4 +188,25 @@ public class PostServiceImpl implements PostService {
     public void deletePost(int postId) {
         postRepository.deleteById(postId);
     }
+    
+    
+    @Transactional
+    public void likePost(Integer postId, Integer userId) {
+        Post post = postRepository.findById(postId).orElseThrow();
+        
+        // Logic to save the like in DB...
+
+        // ✨ Send Notification to Author
+        if (!userId.equals(post.getAuthorId())) { // Don't notify if I like my own post
+            Map<String, Object> note = new HashMap<>();
+            note.put("recipientId", post.getAuthorId());
+            note.put("actorId", userId);
+            note.put("type", "LIKE");
+            note.put("message", "Someone appreciated your manuscript: " + post.getTitle());
+            note.put("relatedId", postId);
+
+            notificationClient.sendNotification(note);
+        }
+    }
+
 }

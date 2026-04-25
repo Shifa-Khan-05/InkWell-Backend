@@ -1,8 +1,10 @@
 package com.commentservice.controller;
 
 import com.commentservice.dto.CommentResponseDTO;
+
 import com.commentservice.entity.Comment;
 import com.commentservice.service.CommentService;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +14,8 @@ import java.util.List;
 @RestController
 @RequestMapping("/comments")
 @RequiredArgsConstructor
+@org.springframework.cloud.openfeign.FeignClient(name = "NOTIFICATION-SERVICE")
+
 public class CommentResource {
 
 	private final CommentService commentService;
