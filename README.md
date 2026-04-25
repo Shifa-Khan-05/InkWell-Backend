@@ -1,211 +1,348 @@
-🛡️ InkWell Post Service
+# 🔔 InkWell Notification Service
 
----
-
-The **Post-Service** is a core microservice of the InkWell blogging platform. It manages the **entire content lifecycle**, from drafting stories to publishing them for public engagement.
+The **Notification-Service** is a critical microservice within the InkWell Blogging Platform responsible for managing **real-time user alerts, engagement notifications, and system-wide communication**. It ensures that authors, readers, and administrators stay informed about platform activities such as likes, comments, approvals, and important announcements.
 
 ---
 
 ## 📌 Overview
 
-The Post-Service powers the storytelling experience in InkWell by enabling:
+In a modern microservices architecture, user engagement should not be tightly coupled with Post-Service or Comment-Service. Instead, the Notification-Service acts as a **central alert engine** that handles:
 
-* Draft creation and publishing workflows
-* SEO-friendly post management
-* Reader engagement (likes system)
-* Integration with Auth-Service for author details
+* In-app notifications
+* Email alerts
+* System broadcasts
+* Unread notification tracking
+* Notification cleanup and inbox maintenance
 
-It plays a critical role in delivering a seamless writing and reading experience.
+This service improves user engagement and platform responsiveness while maintaining clean service separation.
 
 ---
 
 ## 🚀 Key Features
 
-### 📝 Draft & Publish Workflow
+### 🔄 Activity Tracking
 
-* Authors can create posts as **DRAFT**
-* Publish posts to make them visible in the public feed
-* Supports iterative content creation
+* Captures events triggered by:
 
-### 🧠 Intelligent Metadata
+  * Post-Service
+  * Comment-Service
+  * Admin actions
 
-* Auto-generates **SEO-friendly slugs**
-* Calculates **estimated reading time** based on word count
+Examples:
 
-### ❤️ Smart Engagement System
+* New comment on your post
+* Someone liked your article
+* Post approval notification
+* System maintenance alerts
 
-* Ensures **one-user-one-like rule**
-* Supports **like/unlike toggle**
-* Prevents duplicate likes using database constraints
+---
 
-### 🔗 Author Enrichment
+### 📥 In-App Notifications
 
-* Uses **Feign Client** to fetch author details from Auth-Service
-* Maps `authorId` → real user identity
+* Stores notifications in database
+* Supports persistent inbox system
+* Users can view history of alerts
 
-### 🌐 Slug-Based Routing
+---
 
-* Clean and SEO-friendly URLs:
+### 📧 Email Integration
 
-```id="n7g1jv"
-/posts/my-first-story
+* Uses **JavaMailSender**
+* Sends external alerts for:
+
+  * Important updates
+  * Premium notifications
+  * System announcements
+
+---
+
+### 📢 Admin Broadcast System
+
+* Admins can send:
+
+```text id="ntf001"
+SYSTEM ALERTS
+```
+
+to all users at once
+
+Examples:
+
+* Maintenance downtime
+* Platform updates
+* New feature announcements
+
+---
+
+### 🧹 Inbox Maintenance
+
+* Mark notifications as read
+* Mark all as read
+* Delete processed/read notifications
+* Prevent database overload
+
+---
+
+### 🔢 Unread Count Tracking
+
+Used for:
+
+🔔 Navbar badge count
+
+Example:
+
+```text id="ntf002"
+5 unread notifications
 ```
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Layer         | Technology        |
-| ------------- | ----------------- |
-| Language      | Java 17           |
-| Framework     | Spring Boot 3.2.5 |
-| Database      | MySQL             |
-| ORM           | Hibernate (JPA)   |
-| Auditing      | Hibernate Envers  |
-| Communication | OpenFeign         |
-| Discovery     | Eureka Server     |
+| Layer     | Technology               |
+| --------- | ------------------------ |
+| Language  | Java 17                  |
+| Framework | Spring Boot 3.2.5        |
+| Database  | MySQL                    |
+| ORM       | Spring Data JPA          |
+| Email     | Spring Boot Starter Mail |
+| Discovery | Eureka Client            |
+| Utilities | Lombok                   |
 
 ---
 
-## 🏗️ Architecture Highlights
+## 🏗️ System Architecture
 
-* Microservice-based design
-* Service discovery via Eureka
-* Inter-service communication via Feign
-* Transaction-safe engagement system
-
----
-
-## ⚙️ Technical Implementation
-
-### ❤️ Engagement Persistence
-
-To ensure **data integrity and consistency**, likes are stored in a separate table:
-
-```java id="l2m9pw"
-@Table(name = "post_likes", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"post_id", "user_id"})
-})
-public class PostLike {
-    // fields, getters, setters
-}
+```text id="ntf003"
+Post Service ─┐
+              │
+Comment Service ──→ Notification Service → User Inbox
+              │
+ Admin Actions ─┘
+                     ↓
+                Email Alerts
 ```
 
-### 🔒 Key Design Principles
+---
 
-* **Atomic Transactions** using `@Transactional`
-* Prevents duplicate likes
-* Ensures consistency between:
+## 🗄️ Data Model
 
-  * Like count
-  * Individual user engagement
+### 📘 Notification Entity
+
+| Field       | Description             |
+| ----------- | ----------------------- |
+| id          | Primary key             |
+| recipientId | User receiving alert    |
+| actorId     | User triggering event   |
+| type        | Notification category   |
+| message     | Notification content    |
+| isRead      | Inbox read status       |
+| relatedId   | Related post/comment ID |
+| createdAt   | Timestamp               |
+
+---
+
+## 🏷️ Notification Types
+
+Examples:
+
+* `COMMENT`
+* `LIKE`
+* `POST_APPROVAL`
+* `SYSTEM`
+* `FOLLOW`
+* `NEWSLETTER`
 
 ---
 
 ## 📡 API Endpoints
 
-| Method   | Endpoint                           | Description                        |
-| -------- | ---------------------------------- | ---------------------------------- |
-| **POST** | `/posts/create`                    | Create a new post (default: DRAFT) |
-| **GET**  | `/posts/published`                 | Get all published posts            |
-| **GET**  | `/posts/slug/{slug}?userId={id}`   | Get post details + like status     |
-| **POST** | `/posts/{postId}/like?userId={id}` | Toggle like/unlike                 |
+---
+
+### 🔹 Create Notification
+
+```http id="ntf004"
+POST /notifications/send
+```
+
+Creates and stores a new notification.
 
 ---
 
-## ⚙️ Setup & Installation
+### 🔹 Get User Notifications
 
-### 1️⃣ Prerequisites
+```http id="ntf005"
+GET /notifications/user/{id}
+```
+
+Fetch all notifications for a user.
+
+---
+
+### 🔹 Get Unread Count
+
+```http id="ntf006"
+GET /notifications/user/{id}/unread-count
+```
+
+Used for bell icon badge.
+
+---
+
+### 🔹 Mark One as Read
+
+```http id="ntf007"
+PUT /notifications/{id}/read
+```
+
+Updates a single notification.
+
+---
+
+### 🔹 Mark All as Read
+
+```http id="ntf008"
+PUT /notifications/user/{id}/read-all
+```
+
+Bulk read operation.
+
+---
+
+### 🔹 Cleanup Read Notifications
+
+```http id="ntf009"
+DELETE /notifications/user/{id}/cleanup
+```
+
+Deletes all read notifications.
+
+---
+
+## 🔄 Notification Flow (Important 🔥)
+
+### Example: Comment Notification
+
+### 1️⃣ Reader comments on post
+
+↓
+
+### 2️⃣ Comment-Service triggers Notification-Service
+
+↓
+
+### 3️⃣ Notification stored in DB
+
+↓
+
+### 4️⃣ Optional email sent
+
+↓
+
+### 5️⃣ Author sees alert in Inbox 🔔
+
+---
+
+## ⚙️ Configuration
+
+### application.properties
+
+```properties id="ntf010"
+server.port=8084
+spring.application.name=notification-service
+
+# Database
+spring.datasource.url=jdbc:mysql://localhost:3306/inkwell_notification_db
+spring.datasource.username=root
+spring.datasource.password=your_password
+
+# Mail Configuration
+spring.mail.host=smtp.gmail.com
+spring.mail.port=587
+spring.mail.username=your_email@gmail.com
+spring.mail.password=your_app_password
+
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true
+
+# Eureka
+eureka.client.service-url.defaultZone=http://localhost:8761/eureka/
+```
+
+---
+
+## 🚦 Setup & Installation
+
+### ✅ Prerequisites
 
 * Java 17
 * Maven
 * MySQL
 * Eureka Server running on `8761`
+* Gmail App Password for SMTP
 
 ---
 
-### 2️⃣ Database Configuration
+### 🛢️ Database Setup
 
-Update `application.properties`:
-
-```properties id="p8y2wk"
-spring.datasource.url=jdbc:mysql://localhost:3306/inkwell_post
-spring.datasource.username=your_username
-spring.datasource.password=your_password
-
-spring.jpa.hibernate.ddl-auto=update
-spring.jpa.show-sql=true
+```sql id="ntf011"
+CREATE DATABASE inkwell_notification_db;
 ```
 
 ---
 
-### 3️⃣ Important Migration Note
+### ▶️ Run Application
 
-If migrating from older versions:
-
-```sql id="k4twlq"
-DROP TABLE IF EXISTS post_likes;
-```
-
----
-
-### 4️⃣ Run the Service
-
-```bash id="n2fjg7"
+```bash id="ntf012"
 mvn clean install
 mvn spring-boot:run
 ```
 
 ---
 
-## 🔗 Service Dependencies
+## 🧪 Testing
 
-* **Auth-Service** → Fetch author details
-* **Eureka Server** → Service discovery
+Includes unit testing using:
 
----
+* JUnit 5
+* Mockito
 
-## 🧪 Example Request
+### Run Tests
 
-```bash id="o3ql2n"
-curl -X POST http://localhost:8082/posts/create \
--H "Content-Type: application/json" \
--d '{"title":"My First Blog","content":"Hello InkWell!"}'
+```bash id="ntf013"
+mvn test
 ```
+
+Tests cover:
+
+* Notification creation
+* Unread count logic
+* Mark-as-read flow
+* Cleanup operations
+* Email trigger validation
 
 ---
 
 ## 📁 Project Structure
 
-```id="b7x2mr"
-src/main/java/com/inkwell/post
+```text id="ntf014"
+notification-service
 │
 ├── controller      # REST APIs
+├── entity          # Notification entity
+├── repository      # JPA layer
 ├── service         # Business logic
-├── repository      # JPA repositories
-├── entity          # Database models
-├── dto             # Request/Response objects
-├── client          # Feign clients
-└── config          # Configurations
+├── config          # Mail & app configuration
+└── dto             # Request/Response DTOs
 ```
 
 ---
 
-## 🔒 Design Considerations
+## 🔒 Security Considerations
 
-* Data consistency using transactions
-* Scalable microservice communication
-* Clean separation of concerns
-* SEO optimization via slug system
-
----
-
-## 🚧 Future Enhancements
-
-* Comments system
-* Bookmarking feature
-* Trending algorithm
-* Tag/category support
-* Search & filtering
+* Validate recipient ownership
+* Protect admin broadcast endpoints
+* Avoid duplicate notifications
+* Secure email credentials using `.env`
 
 ---
