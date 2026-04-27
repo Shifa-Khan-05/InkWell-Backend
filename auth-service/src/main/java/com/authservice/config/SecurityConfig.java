@@ -27,8 +27,17 @@ public class SecurityConfig {
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		http.csrf(csrf -> csrf.disable()).cors(cors -> cors.disable())
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-				.authorizeHttpRequests(auth -> auth
-						// ✅ HIGH PRIORITY: Internal Upgrade PUT call
+				.authorizeHttpRequests(auth -> auth.requestMatchers("/actuator/**").permitAll() 
+				.requestMatchers("/actuator/**").permitAll() 
+				
+.requestMatchers("/actuator/**").permitAll() 
+					.requestMatchers("/actuator/**").permitAll() 
+					.requestMatchers("/actuator/**").permitAll() 
+					.requestMatchers("/actuator/**").permitAll() 
+					.requestMatchers("/actuator/**").permitAll() 
+					.requestMatchers("/actuator/**").permitAll() 
+					.requestMatchers("/actuator/**").permitAll() 
+				// ✅ HIGH PRIORITY: Internal Upgrade PUT call
 						.requestMatchers(org.springframework.http.HttpMethod.PUT, "/auth/users/*/upgrade").permitAll()
 
 						// ✅ Public endpoints

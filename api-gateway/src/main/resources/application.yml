@@ -17,6 +17,12 @@ spring:
                         allowedHeaders: "*"
                         allowCredentials: true
             routes:
+                # 🌐 Website Controller (BFF) - Aggregated Views
+                - id: website-controller
+                  uri: lb://WEBSITE-CONTROLLER
+                  predicates:
+                      - Path=/api/**
+
                 - id: auth-service
                   uri: lb://AUTH-SERVICE
                   predicates:
@@ -26,6 +32,11 @@ spring:
                   uri: lb://POST-SERVICE
                   predicates:
                       - Path=/posts/**
+
+                - id: post-service-uploads
+                  uri: lb://POST-SERVICE
+                  predicates:
+                      - Path=/post_uploads/**
 
                 - id: comment-service
                   uri: lb://COMMENT-SERVICE
@@ -42,15 +53,16 @@ spring:
                   predicates:
                       - Path=/media/**
 
-                # ✅ MATCHED: Changed to uppercase to match Eureka standards
                 - id: newsletter-service
                   uri: lb://NEWSLETTER-SERVICE
                   predicates:
                       - Path=/newsletter/**
+
                 - id: payment-service
                   uri: lb://PAYMENT-SERVICE
                   predicates:
                       - Path=/payments/**
+
                 - id: notification-service
                   uri: lb://NOTIFICATION-SERVICE
                   predicates:
@@ -60,3 +72,5 @@ eureka:
     client:
         service-url:
             defaultZone: http://localhost:8761/eureka/
+    instance:
+        prefer-ip-address: true

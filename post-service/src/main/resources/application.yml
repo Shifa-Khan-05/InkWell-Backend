@@ -7,7 +7,12 @@ spring:
   config:
     import: optional:file:../.env[.properties]
   
-  # ✅ ADD THIS SECTION TO FIX THE 413 ERROR
+  # ✅ Added Redis Configuration
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
   servlet:
     multipart:
       max-file-size: 10MB
@@ -28,18 +33,11 @@ eureka:
     service-url:
       defaultZone: http://localhost:8761/eureka/
   instance:
-    prefer-ip-address: false
+    prefer-ip-address: true # ✅ Changed to true for better microservice networking
     instance-id: ${spring.application.name}:${server.port}
-    hostname: localhost
 
 management:
   endpoints:
     web:
       exposure:
         include: "*"
-  endpoint:
-    health:
-      show-details: always
-
-blog:
-  wpm: 200

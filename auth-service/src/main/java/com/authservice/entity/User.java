@@ -47,4 +47,13 @@ public class User {
 
 	@Column(name = "membership_level")
 	private String membershipLevel = "FREE";
+
+	@Column(name = "reset_token")
+	private String resetToken;
+
+	@Column(name = "token_expiry")
+	private LocalDateTime tokenExpiry;
+	
+	@Column(name = "age")
+	private Integer age; // Add this field
 }

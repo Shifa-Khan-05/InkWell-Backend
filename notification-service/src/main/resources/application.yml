@@ -5,11 +5,9 @@ spring:
     application:
         name: notification-service
 
-    # ✅ Native Spring Boot 3.x way to import your shared .env file
     config:
         import: "optional:file:../.env[.properties]"
 
-    # Database Configuration for Notifications
     datasource:
         url: ${NOTIFICATION_DB_URL:jdbc:mysql://localhost:3306/inkwell_notifications}
         username: ${DB_USER}
@@ -23,7 +21,6 @@ spring:
             hibernate:
                 dialect: org.hibernate.dialect.MySQLDialect
 
-    # 📧 Mail Server Configuration (Shared with Newsletter logic)
     mail:
         host: smtp.gmail.com
         port: 587
@@ -36,6 +33,16 @@ spring:
                     starttls:
                         enable: true
                         required: true
+                    # ✅ Critical: Added timeouts to prevent 500 errors if Gmail is slow
+                    connectiontimeout: 5000
+                    timeout: 5000
+                    writetimeout: 5000
+
+# ✅ Added to prevent the 125-second health check hang seen in your logs
+management:
+    health:
+        mail:
+            enabled: false
 
 eureka:
     client:
@@ -45,7 +52,6 @@ eureka:
         prefer-ip-address: true
         instance-id: ${spring.application.name}:${server.port}
 
-# Enable logging to track notification dispatch
 logging:
     level:
         org.springframework.mail: DEBUG

@@ -14,8 +14,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/comments")
 @RequiredArgsConstructor
-@org.springframework.cloud.openfeign.FeignClient(name = "NOTIFICATION-SERVICE")
-
 public class CommentResource {
 
 	private final CommentService commentService;

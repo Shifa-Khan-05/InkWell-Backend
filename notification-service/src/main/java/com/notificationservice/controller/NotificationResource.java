@@ -1,6 +1,7 @@
 package com.notificationservice.controller;
 
 import com.notificationservice.entity.Notification;
+import com.notificationservice.repository.NotificationRepository;
 import com.notificationservice.service.NotificationServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -11,6 +12,7 @@ import java.util.List;
 @RequestMapping("/notifications")
 @RequiredArgsConstructor
 public class NotificationResource {
+
 
 	private final NotificationServiceImpl notificationService;
 
@@ -55,4 +57,19 @@ public class NotificationResource {
 		notificationService.sendBulkNotification(message);
 		return ResponseEntity.ok().build();
 	}
+	
+	@PostMapping("/send-styled-email")
+	public ResponseEntity<Void> sendStyledEmail(@RequestBody java.util.Map<String, String> request) {
+		notificationService.sendStyledEmail(
+				request.get("recipientEmail"),
+				request.get("subject"),
+				request.get("title"),
+				request.get("body"),
+				request.get("actionUrl")
+		);
+		return ResponseEntity.ok().build();
+	}
+	
+	
+	
 }

@@ -1,26 +1,30 @@
 package com.postservice.service;
 
+import java.io.IOException;
 import java.util.List;
+import org.springframework.web.multipart.MultipartFile;
 import com.postservice.dto.PostCreationDTO;
 import com.postservice.dto.PostResponseDTO;
 
 public interface PostService {
+	// 📝 Post Management
+	PostResponseDTO createPostWithImage(PostCreationDTO postDto, MultipartFile image) throws IOException;
 
-    PostResponseDTO createPost(PostCreationDTO postDto);
+	PostResponseDTO updatePost(int postId, PostCreationDTO postDto, MultipartFile image) throws IOException;
 
-    PostResponseDTO updatePost(int postId, PostCreationDTO postDto);
+	void deletePost(int postId);
 
-    PostResponseDTO getPostById(int id);
+	// 🔍 Fetching Data
+	PostResponseDTO getPostById(int id);
 
-    PostResponseDTO getPostBySlug(String slug, int currentUserId);
+	PostResponseDTO getPostBySlug(String slug, int currentUserId);
 
-    List<PostResponseDTO> getPostsByAuthor(int authorId);
+	List<PostResponseDTO> getPostsByAuthor(int authorId);
 
-    List<PostResponseDTO> getPublishedPosts();
+	List<PostResponseDTO> getPublishedPosts();
 
-    List<PostResponseDTO> getPostsByCategoryId(Integer catId);
+	List<PostResponseDTO> getPostsByCategoryId(Integer catId);
 
-    void deletePost(int postId);
-
-    void incrementLikes(int postId, int userId);
+	// ❤️ Interaction
+	void incrementLikes(int postId, int userId);
 }
