@@ -7,6 +7,7 @@ import com.authservice.entity.User;
 import com.authservice.repository.UserRepository;
 import com.authservice.util.JwtUtils;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,6 +17,7 @@ import java.nio.file.*;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
@@ -24,7 +26,9 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public UserResponseDTO register(UserRegistrationDTO regDto) {
+        log.info("Attempting to register new user with email: {}", regDto.getEmail());
         if (userRepository.existsByEmail(regDto.getEmail())) {
+            log.warn("Registration failed: Email {} already exists", regDto.getEmail());
             throw new RuntimeException("Email already registered!");
         }
         User user = new User();
@@ -38,25 +42,37 @@ public class AuthServiceImpl implements AuthService {
         user.setRole("ROLE_" + selectedRole.toUpperCase());
         user.setActive(true);
         
-        return mapToResponseDTO(userRepository.save(user));
+        User savedUser = userRepository.save(user);
+        log.info("User registered successfully: {} with ID: {}", savedUser.getEmail(), savedUser.getUserId());
+        return mapToResponseDTO(savedUser);
     }
 
     @Override
     public String login(String email, String password) {
+        log.info("Authentication attempt for email: {}", email);
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found!"));
+                .orElseThrow(() -> {
+                    log.warn("Login failed: User with email {} not found", email);
+                    return new RuntimeException("User not found!");
+                });
         
-        if (!user.isActive())
+        if (!user.isActive()) {
+            log.warn("Login failed: Account {} is suspended", email);
             throw new RuntimeException("Account is suspended!");
+        }
             
-        if (!passwordEncoder.matches(password, user.getPasswordHash()))
+        if (!passwordEncoder.matches(password, user.getPasswordHash())) {
+            log.warn("Login failed: Invalid credentials for email {}", email);
             throw new RuntimeException("Invalid credentials!");
+        }
             
+        log.info("User {} authenticated successfully", email);
         return jwtUtils.generateToken(user.getEmail());
     }
 
     @Override
     public UserResponseDTO getUserById(int userId) {
+        log.debug("Fetching user profile by ID: {}", userId);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found!"));
         return mapToResponseDTO(user);
@@ -64,6 +80,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public UserResponseDTO findByEmail(String email) {
+        log.debug("Fetching user profile by email: {}", email);
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found!"));
         return mapToResponseDTO(user);
@@ -71,6 +88,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public String getRoleByEmail(String email) {
+        log.debug("Checking role for email: {}", email);
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found!"));
         return user.getRole();
@@ -78,6 +96,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public UserResponseDTO updateProfileWithFile(int userId, String fullName, String username, String bio, Integer age, String password, MultipartFile image) {
+        log.info("Identity update initiated for user ID: {}", userId);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found!"));
                 
@@ -89,8 +108,10 @@ public class AuthServiceImpl implements AuthService {
             user.setBio(bio);
         if (age != null)
             user.setAge(age);
-        if (password != null && !password.isEmpty())
+        if (password != null && !password.isEmpty()) {
+            log.debug("Updating password for user ID: {}", userId);
             user.setPasswordHash(passwordEncoder.encode(password));
+        }
 
         if (image != null && !image.isEmpty()) {
             try {
@@ -105,16 +126,22 @@ public class AuthServiceImpl implements AuthService {
                 
                 // Assuming your resource handler maps /uploads/**
                 user.setProfileImageUrl("http://localhost:8081/uploads/" + fileName);
+                log.debug("Profile image updated for user ID: {}", userId);
             } catch (IOException e) {
+                log.error("Image upload failed for user ID {}: {}", userId, e.getMessage());
                 throw new RuntimeException("File storage failed: " + e.getMessage());
             }
         }
-        return mapToResponseDTO(userRepository.save(user));
+        User updatedUser = userRepository.save(user);
+        log.info("Identity updated successfully for user ID: {}", userId);
+        return mapToResponseDTO(updatedUser);
     }
 
     @Override
     public String processOAuthPostLogin(String email, String name, String provider) {
+        log.info("Processing OAuth login via {}: {}", provider, email);
         User user = userRepository.findByEmail(email).orElseGet(() -> {
+            log.info("Creating new OAuth user for email: {}", email);
             User newUser = new User();
             newUser.setEmail(email);
             newUser.setFullName(name);
@@ -129,6 +156,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void deactivateAccount(int userId) {
+        log.info("Deactivating account ID: {}", userId);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         user.setActive(false);
@@ -137,6 +165,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public UserResponseDTO updateProfile(int userId, ProfileUpdateDTO updateDto) {
+        log.info("Basic profile update for user ID: {}", userId);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
                 
@@ -144,7 +173,7 @@ public class AuthServiceImpl implements AuthService {
             user.setFullName(updateDto.getFullName());
         if (updateDto.getBio() != null)
             user.setBio(updateDto.getBio());
-        if (updateDto.getAge() != null) user.setAge(updateDto.getAge()); // ✅ Add this line
+        if (updateDto.getAge() != null) user.setAge(updateDto.getAge());
         
             
         return mapToResponseDTO(userRepository.save(user));
@@ -152,6 +181,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void updateUserRole(Integer userId, String newRole) {
+        log.info("Updating role for user ID {} to {}", userId, newRole);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Identity not found"));
 
@@ -166,6 +196,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void deleteUser(Integer userId) {
+        log.warn("Permanent deletion requested for user ID: {}", userId);
         if (!userRepository.existsById(userId)) {
             throw new RuntimeException("Identity does not exist");
         }
@@ -181,17 +212,23 @@ public class AuthServiceImpl implements AuthService {
     
     @Override
     public void upgradeToPremium(Integer userId) {
+        log.info("Upgrading user ID {} to PREMIUM", userId);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
         
         user.setRole("ROLE_PREMIUM");
+        user.setMembershipLevel("PREMIUM");
+        user.setSubscriptionStartDate(java.time.LocalDateTime.now());
+        user.setSubscriptionEndDate(java.time.LocalDateTime.now().plusMonths(1));
+        
         userRepository.save(user);
-        System.out.println("User " + userId + " has been upgraded to PREMIUM successfully.");
+        log.info("User {} has been upgraded to PREMIUM successfully. Expiry: {}", userId, user.getSubscriptionEndDate());
     }
 
     // ✅ ADDED: Reset Password Implementation for Forgot Password flow
     @Override
     public void resetUserPassword(User user, String newPassword) {
+        log.info("Resetting password for user ID: {}", user.getUserId());
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         user.setResetToken(null);
         user.setTokenExpiry(null);
@@ -205,7 +242,11 @@ public class AuthServiceImpl implements AuthService {
             user.getEmail(), 
             user.getRole(),
             user.getFullName(), 
-            user.getProfileImageUrl()
+            user.getProfileImageUrl(),
+            user.getBio(),
+            user.getAge(),
+            user.getSubscriptionStartDate(),
+            user.getSubscriptionEndDate()
         );
     }
     

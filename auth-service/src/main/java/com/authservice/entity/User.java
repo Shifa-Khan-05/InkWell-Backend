@@ -56,4 +56,10 @@ public class User {
 	
 	@Column(name = "age")
 	private Integer age; // Add this field
+
+	@Column(name = "subscription_start_date")
+	private LocalDateTime subscriptionStartDate;
+
+	@Column(name = "subscription_end_date")
+	private LocalDateTime subscriptionEndDate;
 }

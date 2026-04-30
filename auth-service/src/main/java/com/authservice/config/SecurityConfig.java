@@ -41,7 +41,8 @@ public class SecurityConfig {
 						.requestMatchers(org.springframework.http.HttpMethod.PUT, "/auth/users/*/upgrade").permitAll()
 
 						// ✅ Public endpoints
-						.requestMatchers("/auth/**").permitAll().requestMatchers("/oauth2/**", "/login/oauth2/**")
+						.requestMatchers("/auth/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/webjars/**", "/swagger-resources/**").permitAll()
+						.requestMatchers("/oauth2/**", "/login/oauth2/**")
 						.permitAll().requestMatchers("/uploads/**").permitAll()
 
 						.anyRequest().authenticated())

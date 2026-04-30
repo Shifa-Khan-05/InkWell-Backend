@@ -8,10 +8,13 @@ import com.postservice.dto.PostResponseDTO;
 import com.postservice.dto.UserResponseDTO;
 import com.postservice.entity.Post;
 import com.postservice.entity.PostLike;
+import com.postservice.entity.SavedPost;
 import com.postservice.repository.PostRepository;
 import com.postservice.repository.LikeRepository;
+import com.postservice.repository.SavedPostRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.cache.annotation.CacheEvict;
@@ -32,6 +35,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PostServiceImpl implements PostService {
 
 	private final PostRepository postRepository;
@@ -40,11 +44,44 @@ public class PostServiceImpl implements PostService {
 	private final AuthClient authClient;
 	private final TaxonomyClient taxonomyClient;
 	private final RabbitTemplate rabbitTemplate;
+    private final SavedPostRepository savedPostRepository;
+
+    @Override
+    @Transactional
+    public void toggleSavePost(int postId, int userId) {
+        log.info("User {} toggling save on post ID: {}", userId, postId);
+        if (savedPostRepository.existsByUserIdAndPostId(userId, postId)) {
+            savedPostRepository.deleteByUserIdAndPostId(userId, postId);
+            log.debug("User {} unsaved post ID: {}", userId, postId);
+        } else {
+            savedPostRepository.save(new SavedPost(userId, postId));
+            log.debug("User {} saved post ID: {}", userId, postId);
+        }
+    }
+
+    @Override
+    public List<PostResponseDTO> getSavedPostsByUser(int userId) {
+        log.info("Fetching saved posts for user ID: {}", userId);
+        List<Integer> postIds = savedPostRepository.findByUserId(userId)
+                .stream()
+                .map(SavedPost::getPostId)
+                .collect(Collectors.toList());
+        
+        return postRepository.findAllById(postIds).stream()
+                .map(this::enrichWithAuthor)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public boolean isPostSavedByUser(int postId, int userId) {
+        return savedPostRepository.existsByUserIdAndPostId(userId, postId);
+    }
 
 	@Override
 	@Transactional
 	@CacheEvict(value = "publishedPosts", allEntries = true)
 	public PostResponseDTO createPostWithImage(PostCreationDTO dto, MultipartFile image) throws IOException {
+		log.info("Creating new post: {} for author: {}", dto.getTitle(), dto.getAuthorId());
 		Post post = new Post();
 		post.setTitle(dto.getTitle());
 		post.setContent(dto.getContent());
@@ -53,6 +90,7 @@ public class PostServiceImpl implements PostService {
 		post.setStatus(dto.getStatus() != null ? dto.getStatus() : "DRAFT");
 
 		if (image != null && !image.isEmpty()) {
+			log.debug("Saving featured image for post: {}", dto.getTitle());
 			post.setFeaturedImageUrl(saveImageToDisk(image));
 		}
 
@@ -63,8 +101,10 @@ public class PostServiceImpl implements PostService {
 		post.setUpdatedAt(LocalDateTime.now());
 
 		Post savedPost = postRepository.save(post);
+		log.info("Post saved successfully with ID: {} and Slug: {}", savedPost.getPostId(), savedPost.getSlug());
 
 		if ("PUBLISHED".equalsIgnoreCase(savedPost.getStatus())) {
+			log.debug("Post published, triggering sync and notifications.");
 			triggerTaxonomySync(savedPost);
 			sendRabbitMessage(savedPost, "NEW_POST");
 		}
@@ -76,7 +116,11 @@ public class PostServiceImpl implements PostService {
 	@Transactional
 	@CacheEvict(value = "publishedPosts", allEntries = true)
 	public PostResponseDTO updatePost(int postId, PostCreationDTO dto, MultipartFile image) throws IOException {
-		Post post = postRepository.findById(postId).orElseThrow(() -> new RuntimeException("Post not found"));
+		log.info("Updating post ID: {}", postId);
+		Post post = postRepository.findById(postId).orElseThrow(() -> {
+			log.error("Update failed: Post ID {} not found", postId);
+			return new RuntimeException("Post not found");
+		});
 
 		post.setTitle(dto.getTitle());
 		post.setContent(dto.getContent());
@@ -86,23 +130,30 @@ public class PostServiceImpl implements PostService {
 		post.setUpdatedAt(LocalDateTime.now());
 
 		if (image != null && !image.isEmpty()) {
+			log.debug("Updating featured image for post ID: {}", postId);
 			post.setFeaturedImageUrl(saveImageToDisk(image));
 		}
 
 		Post updatedPost = postRepository.save(post);
+		log.info("Post ID: {} updated successfully", postId);
 		return enrichWithAuthor(updatedPost);
 	}
 
 	@Override
 	@Cacheable(value = "publishedPosts")
 	public List<PostResponseDTO> getPublishedPosts() {
+		log.info("Fetching all published posts");
 		return postRepository.findByStatusOrderByCreatedAtDesc("PUBLISHED").stream().map(this::enrichWithAuthor)
 				.collect(Collectors.toList());
 	}
 
 	@Override
 	public PostResponseDTO getPostBySlug(String slug, int currentUserId) {
-		Post post = postRepository.findBySlug(slug).orElseThrow(() -> new RuntimeException("Post not found"));
+		log.info("Fetching post by slug: {}", slug);
+		Post post = postRepository.findBySlug(slug).orElseThrow(() -> {
+			log.warn("Post lookup failed for slug: {}", slug);
+			return new RuntimeException("Post not found");
+		});
 		PostResponseDTO dto = enrichWithAuthor(post);
 		if (currentUserId > 0) {
 			dto.setLikedByCurrentUser(likeRepository.existsByPostIdAndUserId(post.getPostId(), currentUserId));
@@ -114,13 +165,16 @@ public class PostServiceImpl implements PostService {
 	@Transactional
 	@CacheEvict(value = "publishedPosts", allEntries = true)
 	public void incrementLikes(int postId, int userId) {
+		log.info("User {} toggling like on post ID: {}", userId, postId);
 		Post post = postRepository.findById(postId).orElseThrow();
 		if (likeRepository.existsByPostIdAndUserId(postId, userId)) {
 			likeRepository.deleteByPostIdAndUserId(postId, userId);
 			post.setLikesCount(Math.max(0, post.getLikesCount() - 1));
+			log.debug("User {} unliked post ID: {}", userId, postId);
 		} else {
 			likeRepository.save(new PostLike(postId, userId));
 			post.setLikesCount(post.getLikesCount() + 1);
+			log.debug("User {} liked post ID: {}", userId, postId);
 			if (userId != post.getAuthorId()) {
 				sendRabbitMessage(post, "LIKE");
 			}
@@ -130,11 +184,13 @@ public class PostServiceImpl implements PostService {
 
 	@Override
 	public List<PostResponseDTO> getPostsByCategoryId(Integer catId) {
+		log.info("Fetching posts for category ID: {}", catId);
 		return postRepository.findByCategoryId(catId).stream().map(this::enrichWithAuthor).collect(Collectors.toList());
 	}
 
 	@Override
 	public PostResponseDTO getPostById(int id) {
+		log.info("Fetching post by ID: {}", id);
 		return postRepository.findById(id).map(this::enrichWithAuthor)
 				.orElseThrow(() -> new RuntimeException("Post not found"));
 	}
@@ -143,11 +199,13 @@ public class PostServiceImpl implements PostService {
 	@Transactional
 	@CacheEvict(value = "publishedPosts", allEntries = true)
 	public void deletePost(int postId) {
+		log.info("Deleting post ID: {}", postId);
 		postRepository.deleteById(postId);
 	}
 
 	@Override
 	public List<PostResponseDTO> getPostsByAuthor(int authorId) {
+		log.info("Fetching posts by author ID: {}", authorId);
 		return postRepository.findByAuthorId(authorId).stream().map(this::enrichWithAuthor)
 				.collect(Collectors.toList());
 	}
@@ -155,12 +213,17 @@ public class PostServiceImpl implements PostService {
 	// --- Private Helpers ---
 
 	private void sendRabbitMessage(Post post, String type) {
+		log.debug("Sending RabbitMQ message [TYPE: {}] for post: {}", type, post.getPostId());
 		Map<String, Object> message = new HashMap<>();
 		message.put("postId", post.getPostId());
 		message.put("title", post.getTitle());
 		message.put("recipientId", post.getAuthorId());
 		message.put("type", type);
-		rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE, RabbitMQConfig.ROUTING_KEY, message);
+		try {
+			rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE, RabbitMQConfig.ROUTING_KEY, message);
+		} catch (Exception e) {
+			log.error("Failed to send RabbitMQ message: {}", e.getMessage());
+		}
 	}
 
 	private String saveImageToDisk(MultipartFile image) throws IOException {
@@ -172,6 +235,7 @@ public class PostServiceImpl implements PostService {
 		}
 
 		Path filePath = uploadPath.resolve(fileName);
+		log.debug("Saving file to: {}", filePath.toAbsolutePath());
 		Files.copy(image.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
 		return "http://localhost:8080/post_uploads/" + fileName;
@@ -184,15 +248,18 @@ public class PostServiceImpl implements PostService {
 		while (postRepository.existsBySlug(finalSlug)) {
 			finalSlug = baseSlug + "-" + (System.currentTimeMillis() % 1000) + attempts++;
 		}
+		log.debug("Generated unique slug: {}", finalSlug);
 		return finalSlug;
 	}
 
 	private PostResponseDTO enrichWithAuthor(Post post) {
 		PostResponseDTO dto = modelMapper.map(post, PostResponseDTO.class);
 		try {
+			log.debug("Fetching author info for ID: {}", post.getAuthorId());
 			UserResponseDTO author = authClient.getUserById(post.getAuthorId());
 			dto.setFullName(author.getFullName());
 		} catch (Exception e) {
+			log.warn("Author lookup failed for ID {}: {}", post.getAuthorId(), e.getMessage());
 			dto.setFullName("InkWell Author");
 		}
 		return dto;
@@ -214,9 +281,11 @@ public class PostServiceImpl implements PostService {
 
 	private void triggerTaxonomySync(Post post) {
 		if (post.getCategoryId() != null) {
+			log.debug("Syncing taxonomy post count for category ID: {}", post.getCategoryId());
 			try {
 				taxonomyClient.incrementPostCount(post.getCategoryId());
-			} catch (Exception ignored) {
+			} catch (Exception e) {
+				log.error("Taxonomy sync failed: {}", e.getMessage());
 			}
 		}
 	}

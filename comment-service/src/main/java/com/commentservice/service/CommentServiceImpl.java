@@ -94,15 +94,24 @@ public class CommentServiceImpl implements CommentService {
         commentRepository.save(comment);
 
         try {
-            Map<String, Object> note = new HashMap<>();
-            // ✅ Corrected: Notify the Author of the post, not the commenter
-            note.put("recipientId", comment.getAuthorId()); 
-            note.put("actorId", 0); 
-            note.put("type", "NEW_COMMENT");
-            note.put("message", "Your narrative has a new verified discussion!");
-            note.put("relatedId", comment.getPostId());
+            // 1. Notify the Author of the post
+            Map<String, Object> authorNote = new HashMap<>();
+            authorNote.put("recipientId", comment.getAuthorId()); 
+            authorNote.put("actorId", 0); 
+            authorNote.put("type", "NEW_COMMENT");
+            authorNote.put("message", "Your narrative has a new verified discussion!");
+            authorNote.put("relatedId", comment.getPostId());
+            notificationClient.sendNotification(authorNote);
 
-            notificationClient.sendNotification(note);
+            // 2. Notify the Reader (Commenter)
+            Map<String, Object> readerNote = new HashMap<>();
+            readerNote.put("recipientId", comment.getUserId()); 
+            readerNote.put("actorId", 0); 
+            readerNote.put("type", "COMMENT_APPROVED");
+            readerNote.put("message", "Your discussion point has been approved and is now live!");
+            readerNote.put("relatedId", comment.getPostId());
+            notificationClient.sendNotification(readerNote);
+
         } catch (Exception e) {
             System.err.println("Notification failed: " + e.getMessage());
         }

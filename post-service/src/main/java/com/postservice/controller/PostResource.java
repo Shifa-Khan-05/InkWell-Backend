@@ -98,4 +98,21 @@ public class PostResource {
 		postService.deletePost(postId);
 		return ResponseEntity.noContent().build();
 	}
+
+    // 🔖 Saved Posts (Pro Feature)
+    @PostMapping("/{postId}/save")
+    public ResponseEntity<Void> toggleSavePost(@PathVariable int postId, @RequestParam(name = "userId") int userId) {
+        postService.toggleSavePost(postId, userId);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/saved/{userId}")
+    public ResponseEntity<List<PostResponseDTO>> getSavedPosts(@PathVariable int userId) {
+        return ResponseEntity.ok(postService.getSavedPostsByUser(userId));
+    }
+
+    @GetMapping("/{postId}/is-saved")
+    public ResponseEntity<Boolean> isPostSaved(@PathVariable int postId, @RequestParam(name = "userId") int userId) {
+        return ResponseEntity.ok(postService.isPostSavedByUser(postId, userId));
+    }
 }

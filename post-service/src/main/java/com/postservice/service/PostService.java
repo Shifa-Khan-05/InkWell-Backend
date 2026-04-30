@@ -27,4 +27,9 @@ public interface PostService {
 
 	// ❤️ Interaction
 	void incrementLikes(int postId, int userId);
+
+    // 🔖 Saved Posts (Pro Feature)
+    void toggleSavePost(int postId, int userId);
+    List<PostResponseDTO> getSavedPostsByUser(int userId);
+    boolean isPostSavedByUser(int postId, int userId);
 }
