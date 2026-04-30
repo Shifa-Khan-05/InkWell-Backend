@@ -1,157 +1,168 @@
-# 🔔 InkWell Notification Service
+# 🖋️ InkWell Website Controller (BFF)
 
-The **Notification-Service** is a critical microservice within the InkWell Blogging Platform responsible for managing **real-time user alerts, engagement notifications, and system-wide communication**. It ensures that authors, readers, and administrators stay informed about platform activities such as likes, comments, approvals, and important announcements.
+The **Website Controller** acts as the **Backend-for-Frontend (BFF)** for the InkWell Blogging Platform. It serves as the **single entry point** for the React frontend and orchestrates communication between multiple backend microservices such as **Auth-Service, Post-Service, Comment-Service, Notification-Service, and Payment-Service**.
+
+Instead of the frontend making multiple direct service calls, the BFF simplifies the architecture by aggregating data, handling cross-service workflows, and providing a clean API surface for the UI.
 
 ---
 
 ## 📌 Overview
 
-In a modern microservices architecture, user engagement should not be tightly coupled with Post-Service or Comment-Service. Instead, the Notification-Service acts as a **central alert engine** that handles:
+In a microservices architecture, directly connecting the frontend to every service creates:
 
-* In-app notifications
-* Email alerts
-* System broadcasts
-* Unread notification tracking
-* Notification cleanup and inbox maintenance
+* Complex frontend logic
+* Too many API calls
+* Difficult state management
+* Increased error handling complexity
 
-This service improves user engagement and platform responsiveness while maintaining clean service separation.
+The Website Controller solves this by acting as a centralized orchestration layer.
 
----
+It handles:
 
-## 🚀 Key Features
-
-### 🔄 Activity Tracking
-
-* Captures events triggered by:
-
-  * Post-Service
-  * Comment-Service
-  * Admin actions
-
-Examples:
-
-* New comment on your post
-* Someone liked your article
-* Post approval notification
-* System maintenance alerts
+* Admin analytics dashboard
+* User + post aggregation
+* Cross-service business logic
+* Graceful failure handling
+* Simplified frontend integration
 
 ---
 
-### 📥 In-App Notifications
-
-* Stores notifications in database
-* Supports persistent inbox system
-* Users can view history of alerts
+## 🚀 Core Functionalities
 
 ---
 
-### 📧 Email Integration
+## 📊 1. Admin Analytics Dashboard
 
-* Uses **JavaMailSender**
-* Sends external alerts for:
+This is one of the most important features of the BFF.
 
-  * Important updates
-  * Premium notifications
-  * System announcements
+It provides a **single dashboard response** containing:
+
+### 👤 Identity Tracking
+
+From **Auth-Service**
+
+* Total users
+* Active users
+* Premium users
+* User role distribution
 
 ---
 
-### 📢 Admin Broadcast System
+### 📝 Content Insights
 
-* Admins can send:
+From **Post-Service**
 
-```text id="ntf001"
-SYSTEM ALERTS
+* Total posts
+* Published posts
+* Draft posts
+* Most viewed posts
+
+---
+
+### ❤️ Engagement Metrics
+
+From **Comment-Service + Notification-Service**
+
+* Total comments
+* Total likes
+* Recent activity alerts
+
+---
+
+### 🏆 Top Performing Posts
+
+Logic-based sorting to return:
+
+```text id="bff001"
+Top 5 Most Liked Posts
 ```
 
-to all users at once
-
-Examples:
-
-* Maintenance downtime
-* Platform updates
-* New feature announcements
+Used directly in Admin Dashboard cards.
 
 ---
 
-### 🧹 Inbox Maintenance
+### ⚙️ Platform Health
 
-* Mark notifications as read
-* Mark all as read
-* Delete processed/read notifications
-* Prevent database overload
+Tracks service availability:
 
----
+* Auth-Service
+* Post-Service
+* Comment-Service
+* Notification-Service
 
-### 🔢 Unread Count Tracking
+System status examples:
 
-Used for:
-
-🔔 Navbar badge count
-
-Example:
-
-```text id="ntf002"
-5 unread notifications
+```text id="bff002"
+OPERATIONAL
+DEGRADED
+FAILED
 ```
+
+---
+
+## 🔄 2. Service Orchestration
+
+The BFF acts like a smart coordinator.
+
+### Uses OpenFeign Clients for:
+
+* User details
+* Posts
+* Comments
+* Notifications
+* Payment status
+
+---
+
+### Example
+
+Instead of React doing:
+
+```text id="bff003"
+GET /users
+GET /posts
+GET /comments
+GET /notifications
+```
+
+It only calls:
+
+```text id="bff004"
+GET /api/admin/summary
+```
+
+and receives everything together.
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Layer     | Technology               |
-| --------- | ------------------------ |
-| Language  | Java 17                  |
-| Framework | Spring Boot 3.2.5        |
-| Database  | MySQL                    |
-| ORM       | Spring Data JPA          |
-| Email     | Spring Boot Starter Mail |
-| Discovery | Eureka Client            |
-| Utilities | Lombok                   |
+| Layer         | Technology             |
+| ------------- | ---------------------- |
+| Language      | Java 17                |
+| Framework     | Spring Boot 3.x        |
+| Communication | Spring Cloud OpenFeign |
+| Discovery     | Eureka Client          |
+| Utilities     | Lombok                 |
+| Monitoring    | Spring Boot Actuator   |
 
 ---
 
 ## 🏗️ System Architecture
 
-```text id="ntf003"
-Post Service ─┐
-              │
-Comment Service ──→ Notification Service → User Inbox
-              │
- Admin Actions ─┘
-                     ↓
-                Email Alerts
+```text id="bff005"
+React Frontend
+      ↓
+Website Controller (BFF)
+      ↓
+────────────────────────────
+Auth-Service
+Post-Service
+Comment-Service
+Notification-Service
+Payment-Service
+────────────────────────────
 ```
-
----
-
-## 🗄️ Data Model
-
-### 📘 Notification Entity
-
-| Field       | Description             |
-| ----------- | ----------------------- |
-| id          | Primary key             |
-| recipientId | User receiving alert    |
-| actorId     | User triggering event   |
-| type        | Notification category   |
-| message     | Notification content    |
-| isRead      | Inbox read status       |
-| relatedId   | Related post/comment ID |
-| createdAt   | Timestamp               |
-
----
-
-## 🏷️ Notification Types
-
-Examples:
-
-* `COMMENT`
-* `LIKE`
-* `POST_APPROVAL`
-* `SYSTEM`
-* `FOLLOW`
-* `NEWSLETTER`
 
 ---
 
@@ -159,114 +170,111 @@ Examples:
 
 ---
 
-### 🔹 Create Notification
+## 🔹 Admin Endpoints
 
-```http id="ntf004"
-POST /notifications/send
-```
-
-Creates and stores a new notification.
-
----
-
-### 🔹 Get User Notifications
-
-```http id="ntf005"
-GET /notifications/user/{id}
-```
-
-Fetch all notifications for a user.
+| Method | Endpoint             | Description                  |
+| ------ | -------------------- | ---------------------------- |
+| GET    | `/api/admin/summary` | Full admin dashboard summary |
+| GET    | `/api/admin/users`   | Fetch all users              |
+| GET    | `/api/admin/health`  | Service health check         |
 
 ---
 
-### 🔹 Get Unread Count
+## 🔹 Post Endpoints (Proxied)
 
-```http id="ntf006"
-GET /notifications/user/{id}/unread-count
-```
-
-Used for bell icon badge.
-
----
-
-### 🔹 Mark One as Read
-
-```http id="ntf007"
-PUT /notifications/{id}/read
-```
-
-Updates a single notification.
+| Method | Endpoint               | Description        |
+| ------ | ---------------------- | ------------------ |
+| GET    | `/api/posts/published` | Public feed        |
+| POST   | `/api/posts/create`    | Create post        |
+| GET    | `/api/posts/{slug}`    | Fetch post details |
 
 ---
 
-### 🔹 Mark All as Read
+## 🔹 User Endpoints
 
-```http id="ntf008"
-PUT /notifications/user/{id}/read-all
-```
-
-Bulk read operation.
-
----
-
-### 🔹 Cleanup Read Notifications
-
-```http id="ntf009"
-DELETE /notifications/user/{id}/cleanup
-```
-
-Deletes all read notifications.
+| Method | Endpoint            | Description    |
+| ------ | ------------------- | -------------- |
+| GET    | `/api/profile/{id}` | Get profile    |
+| PUT    | `/api/profile/{id}` | Update profile |
 
 ---
 
-## 🔄 Notification Flow (Important 🔥)
+## 🔹 Notification Endpoints
 
-### Example: Comment Notification
+| Method | Endpoint                        | Description        |
+| ------ | ------------------------------- | ------------------ |
+| GET    | `/api/notifications/{id}`       | User notifications |
+| GET    | `/api/notifications/count/{id}` | Unread count       |
 
-### 1️⃣ Reader comments on post
+---
+
+## 🔄 Example Workflow (Important 🔥)
+
+## Admin Dashboard Request
+
+### Step 1
+
+Frontend calls:
+
+```text id="bff006"
+GET /api/admin/summary
+```
+
+---
+
+### Step 2
+
+BFF calls:
+
+* Auth-Service
+* Post-Service
+* Comment-Service
+* Notification-Service
+
+---
+
+### Step 3
+
+BFF merges all data
 
 ↓
 
-### 2️⃣ Comment-Service triggers Notification-Service
+Creates unified DTO
 
 ↓
 
-### 3️⃣ Notification stored in DB
+Returns one clean JSON response
 
-↓
+---
 
-### 4️⃣ Optional email sent
+### Step 4
 
-↓
-
-### 5️⃣ Author sees alert in Inbox 🔔
+Frontend renders dashboard instantly
 
 ---
 
 ## ⚙️ Configuration
 
-### application.properties
+### application.yml
 
-```properties id="ntf010"
-server.port=8084
-spring.application.name=notification-service
+```yaml id="bff007"
+server:
+  port: 8080
 
-# Database
-spring.datasource.url=jdbc:mysql://localhost:3306/inkwell_notification_db
-spring.datasource.username=root
-spring.datasource.password=your_password
+spring:
+  application:
+    name: website-controller
 
-# Mail Configuration
-spring.mail.host=smtp.gmail.com
-spring.mail.port=587
-spring.mail.username=your_email@gmail.com
-spring.mail.password=your_app_password
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
 
-spring.mail.properties.mail.smtp.auth=true
-spring.mail.properties.mail.smtp.starttls.enable=true
-
-# Eureka
-eureka.client.service-url.defaultZone=http://localhost:8761/eureka/
+AUTH_SERVICE_URL: http://AUTH-SERVICE
+POST_SERVICE_URL: http://POST-SERVICE
+COMMENT_SERVICE_URL: http://COMMENT-SERVICE
+NOTIFICATION_SERVICE_URL: http://NOTIFICATION-SERVICE
+PAYMENT_SERVICE_URL: http://PAYMENT-SERVICE
 ```
 
 ---
@@ -277,72 +285,111 @@ eureka.client.service-url.defaultZone=http://localhost:8761/eureka/
 
 * Java 17
 * Maven
-* MySQL
 * Eureka Server running on `8761`
-* Gmail App Password for SMTP
+* Core services running:
 
----
+  * Auth-Service
+  * Post-Service
 
-### 🛢️ Database Setup
+Optional:
 
-```sql id="ntf011"
-CREATE DATABASE inkwell_notification_db;
-```
+* Comment-Service
+* Notification-Service
+* Payment-Service
 
 ---
 
 ### ▶️ Run Application
 
-```bash id="ntf012"
+```bash id="bff008"
 mvn clean install
 mvn spring-boot:run
 ```
 
 ---
 
-## 🧪 Testing
+### 🔍 Verification
 
-Includes unit testing using:
+Health Check:
 
-* JUnit 5
-* Mockito
-
-### Run Tests
-
-```bash id="ntf013"
-mvn test
+```text id="bff009"
+http://localhost:8080/actuator/health
 ```
 
-Tests cover:
+Swagger (if enabled):
 
-* Notification creation
-* Unread count logic
-* Mark-as-read flow
-* Cleanup operations
-* Email trigger validation
+```text id="bff010"
+http://localhost:8080/swagger-ui.html
+```
+
+---
+
+## 🛡️ Error Handling Strategy
+
+The Website Controller uses:
+
+# Graceful Degradation
+
+### OPERATIONAL
+
+All services working
+
+---
+
+### DEGRADED
+
+Auxiliary services down
+
+Example:
+
+```text id="bff011"
+Comment-Service unavailable
+```
+
+Dashboard still works
+
+---
+
+### FAILED
+
+Critical services down
+
+Example:
+
+```text id="bff012"
+Auth-Service + Post-Service down
+```
+
+Returns structured JSON error for frontend Toastify.
 
 ---
 
 ## 📁 Project Structure
 
-```text id="ntf014"
-notification-service
+```text id="bff013"
+website-controller
 │
-├── controller      # REST APIs
-├── entity          # Notification entity
-├── repository      # JPA layer
-├── service         # Business logic
-├── config          # Mail & app configuration
-└── dto             # Request/Response DTOs
+├── client         # Feign Clients
+├── controller     # REST APIs
+├── dto            # Aggregated response DTOs
+├── service        # Dashboard logic
+├── config         # Feign + Security config
+└── util           # Error handling helpers
 ```
 
 ---
 
-## 🔒 Security Considerations
+## 🧪 Testing
 
-* Validate recipient ownership
-* Protect admin broadcast endpoints
-* Avoid duplicate notifications
-* Secure email credentials using `.env`
+Includes:
 
----
+* Unit Tests
+* Feign Mock Testing
+* Integration Testing
+* Failure Simulation Tests
+
+### Run Tests
+
+```bash id="bff014"
+mvn test
+```
