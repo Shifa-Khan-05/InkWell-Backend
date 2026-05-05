@@ -65,11 +65,11 @@ public class PostServiceImpl implements PostService {
         List<Integer> postIds = savedPostRepository.findByUserId(userId)
                 .stream()
                 .map(SavedPost::getPostId)
-                .collect(Collectors.toList());
+                .toList();
         
         return postRepository.findAllById(postIds).stream()
                 .map(this::enrichWithAuthor)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -144,7 +144,7 @@ public class PostServiceImpl implements PostService {
 	public List<PostResponseDTO> getPublishedPosts() {
 		log.info("Fetching all published posts");
 		return postRepository.findByStatusOrderByCreatedAtDesc("PUBLISHED").stream().map(this::enrichWithAuthor)
-				.collect(Collectors.toList());
+				.toList();
 	}
 
 	@Override
@@ -185,7 +185,7 @@ public class PostServiceImpl implements PostService {
 	@Override
 	public List<PostResponseDTO> getPostsByCategoryId(Integer catId) {
 		log.info("Fetching posts for category ID: {}", catId);
-		return postRepository.findByCategoryId(catId).stream().map(this::enrichWithAuthor).collect(Collectors.toList());
+		return postRepository.findByCategoryId(catId).stream().map(this::enrichWithAuthor).toList();
 	}
 
 	@Override
@@ -207,7 +207,7 @@ public class PostServiceImpl implements PostService {
 	public List<PostResponseDTO> getPostsByAuthor(int authorId) {
 		log.info("Fetching posts by author ID: {}", authorId);
 		return postRepository.findByAuthorId(authorId).stream().map(this::enrichWithAuthor)
-				.collect(Collectors.toList());
+				.toList();
 	}
 
 	// --- Private Helpers ---
@@ -227,7 +227,11 @@ public class PostServiceImpl implements PostService {
 	}
 
 	private String saveImageToDisk(MultipartFile image) throws IOException {
-		String fileName = System.currentTimeMillis() + "_" + image.getOriginalFilename().replaceAll("[^a-zA-Z0-9.-]", "_");
+		String originalFilename = image.getOriginalFilename();
+		if (originalFilename == null) {
+			originalFilename = "default.jpg";
+		}
+		String fileName = System.currentTimeMillis() + "_" + originalFilename.replaceAll("[^a-zA-Z0-9.-]", "_");
 		Path uploadPath = Paths.get("uploads");
 
 		if (!Files.exists(uploadPath)) {
@@ -238,7 +242,7 @@ public class PostServiceImpl implements PostService {
 		log.debug("Saving file to: {}", filePath.toAbsolutePath());
 		Files.copy(image.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-		return "http://localhost:8080/post_uploads/" + fileName;
+		return "http://localhost:8081/post_uploads/" + fileName;
 	}
 
 	private String generateUniqueSlug(String title) {
@@ -254,6 +258,10 @@ public class PostServiceImpl implements PostService {
 
 	private PostResponseDTO enrichWithAuthor(Post post) {
 		PostResponseDTO dto = modelMapper.map(post, PostResponseDTO.class);
+		if (dto.getFeaturedImageUrl() != null && dto.getFeaturedImageUrl().startsWith("http://localhost:8080/")) {
+			dto.setFeaturedImageUrl(dto.getFeaturedImageUrl().replace("http://localhost:8080/", "http://localhost:8081/"));
+		}
+		
 		try {
 			log.debug("Fetching author info for ID: {}", post.getAuthorId());
 			UserResponseDTO author = authClient.getUserById(post.getAuthorId());

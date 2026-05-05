@@ -13,14 +13,14 @@ public class RabbitMQConfig {
     public static final String ROUTING_KEY = "post_routing_key";
 
     @Bean
-    public Queue queue() { return new Queue(QUEUE); }
+    public Queue postQueue() { return new Queue(QUEUE); }
 
     @Bean
-    public TopicExchange exchange() { return new TopicExchange(EXCHANGE); }
+    public TopicExchange postExchange() { return new TopicExchange(EXCHANGE); }
 
     @Bean
-    public Binding binding(Queue queue, TopicExchange exchange) {
-        return BindingBuilder.bind(queue).to(exchange).with(ROUTING_KEY);
+    public Binding binding(Queue postQueue, TopicExchange postExchange) {
+        return BindingBuilder.bind(postQueue).to(postExchange).with(ROUTING_KEY);
     }
 
     @Bean

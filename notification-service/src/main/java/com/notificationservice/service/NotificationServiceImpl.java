@@ -5,6 +5,7 @@ import com.notificationservice.entity.Notification;
 import com.notificationservice.repository.NotificationRepository;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -13,6 +14,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class NotificationServiceImpl {
 
 	private final NotificationRepository repository;
@@ -112,7 +114,7 @@ public class NotificationServiceImpl {
 
 			mailSender.send(message);
 		} catch (Exception e) {
-			System.err.println("Styled Email Error: " + e.getMessage());
+			log.error("Styled Email Error: {}", e.getMessage());
 		}
 	}
 
@@ -136,9 +138,9 @@ public class NotificationServiceImpl {
 			// 3. Batch save to the database for high performance
 			repository.saveAll(bulkNotes);
 
-			System.out.println("Bulk notification dispatched to " + allUserIds.size() + " users.");
+			log.info("Bulk notification dispatched to {} users.", allUserIds.size());
 		} catch (Exception e) {
-			System.err.println("Failed to send bulk notification: " + e.getMessage());
+			log.error("Failed to send bulk notification: {}", e.getMessage());
 		}
 	}
 }

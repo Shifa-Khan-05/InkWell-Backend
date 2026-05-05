@@ -4,9 +4,11 @@ import com.notificationservice.service.NotificationServiceImpl;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import lombok.extern.slf4j.Slf4j;
 import java.util.Map;
 
 @Service
+@Slf4j
 public class PostEventConsumer {
 
 	@Autowired
@@ -14,7 +16,7 @@ public class PostEventConsumer {
 
 	@RabbitListener(queues = "post_notification_queue")
 	public void consumePostMessage(Map<String, Object> message) {
-		System.out.println("Received message from RabbitMQ: " + message.get("title"));
+		log.info("Received message from RabbitMQ: {}", message.get("title"));
 
 		// Create in-app notification logic
 		notificationService.createNotification((Integer) message.get("authorId"), 0, // System Actor

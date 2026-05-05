@@ -7,6 +7,7 @@ import com.authservice.dto.UserResponseDTO;
 import com.authservice.entity.User;
 
 public interface AuthService {
+	void sendRegistrationOtp(String email);
 	UserResponseDTO register(UserRegistrationDTO regDto);
 
 	String login(String email, String password);
@@ -35,4 +36,8 @@ public interface AuthService {
 	void upgradeToPremium(Integer userId);
 
 	void resetUserPassword(User user, String newPassword);
+
+	void requestRoleChange(int userId, String requestedRole);
+	java.util.List<com.authservice.entity.RoleRequest> getAllRoleRequests();
+	void processRoleRequest(int requestId, String status);
 }

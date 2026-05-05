@@ -28,23 +28,24 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AuthResource {
 
+	private static final String MESSAGE_KEY = "message";
 	private final AuthService authService;
 	private final UserRepository userRepository;
 	@Autowired
 	private NotificationClient notificationClient; // Inject the client
 
 	@PutMapping("/users/{id}/upgrade")
-	public ResponseEntity<?> upgradeUser(@PathVariable Integer id) {
+	public ResponseEntity<Map<String, String>> upgradeUser(@PathVariable Integer id) {
 		try {
 			authService.upgradeToPremium(id);
-			return ResponseEntity.ok(Map.of("status", "success", "message", "User upgraded to PREMIUM successfully"));
+			return ResponseEntity.ok(Map.of("status", "success", MESSAGE_KEY, "User upgraded to PREMIUM successfully"));
 		} catch (Exception e) {
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Upgrade failed: " + e.getMessage());
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(MESSAGE_KEY, "Upgrade failed: " + e.getMessage()));
 		}
 	}
 
 	@PostMapping("/login")
-	public ResponseEntity<?> login(@RequestBody Map<String, String> creds) {
+	public ResponseEntity<Object> login(@RequestBody Map<String, String> creds) {
 		try {
 			String email = creds.get("email");
 			String password = creds.get("password");
@@ -61,17 +62,31 @@ public class AuthResource {
 		}
 	}
 
+	@PostMapping("/send-otp")
+	public ResponseEntity<Map<String, String>> sendOtp(@RequestBody Map<String, String> request) {
+		String email = request.get("email");
+		if (email == null || email.isEmpty()) {
+			return ResponseEntity.badRequest().body(Map.of(MESSAGE_KEY, "Email is required."));
+		}
+		try {
+			authService.sendRegistrationOtp(email);
+			return ResponseEntity.ok(Map.of(MESSAGE_KEY, "OTP sent successfully to " + email));
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(MESSAGE_KEY, e.getMessage()));
+		}
+	}
+
 	@PostMapping("/register")
 	public ResponseEntity<UserResponseDTO> register(@RequestBody UserRegistrationDTO userDto) {
 		return ResponseEntity.ok(authService.register(userDto));
 	}
 
 	@GetMapping("/profile/{userId}")
-	public ResponseEntity<?> getProfile(@PathVariable int userId) {
+	public ResponseEntity<Object> getProfile(@PathVariable int userId) {
 		try {
 			UserResponseDTO user = authService.getUserById(userId);
 			return ResponseEntity.ok(user);
-		} catch (RuntimeException e) {
+		} catch (com.authservice.exception.ResourceNotFoundException e) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found.");
 		}
 	}
@@ -107,7 +122,7 @@ public class AuthResource {
 
 	@PutMapping("/users/{userId}/status")
 	public ResponseEntity<Void> toggleUserStatus(@PathVariable Integer userId, @RequestParam boolean active) {
-		User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+		User user = userRepository.findById(userId).orElseThrow(() -> new com.authservice.exception.ResourceNotFoundException("User not found"));
 		user.setActive(active);
 		userRepository.save(user);
 		return ResponseEntity.ok().build();
@@ -119,27 +134,27 @@ public class AuthResource {
 	}
 
 	@PostMapping("/reset-password")
-	public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> request) {
+	public ResponseEntity<Map<String, String>> resetPassword(@RequestBody Map<String, String> request) {
 		String token = request.get("token");
 		String newPassword = request.get("newPassword");
 
 		User user = userRepository.findByResetToken(token)
-				.orElseThrow(() -> new RuntimeException("Invalid or expired security token."));
+				.orElseThrow(() -> new com.authservice.exception.AuthException("Invalid or expired security token."));
 
 		if (user.getTokenExpiry().isBefore(LocalDateTime.now())) {
-			throw new RuntimeException("Security token has expired.");
+			throw new com.authservice.exception.AuthException("Security token has expired.");
 		}
 
 		// Pass to service layer for encoded saving
 		authService.resetUserPassword(user, newPassword);
 
-		return ResponseEntity.ok(Map.of("message", "Security protocols updated successfully."));
+		return ResponseEntity.ok(Map.of(MESSAGE_KEY, "Security protocols updated successfully."));
 	}
 
 	@PostMapping("/forgot-password")
-	public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> request) {
+	public ResponseEntity<Map<String, String>> forgotPassword(@RequestBody Map<String, String> request) {
 		String email = request.get("email");
-		User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("Identity not found."));
+		User user = userRepository.findByEmail(email).orElseThrow(() -> new com.authservice.exception.ResourceNotFoundException("Identity not found."));
 
 		String token = UUID.randomUUID().toString();
 		user.setResetToken(token);
@@ -157,7 +172,32 @@ public class AuthResource {
 
 		notificationClient.sendStyledEmail(mailData);
 
-		return ResponseEntity.ok(Map.of("message", "Recovery manuscript dispatched."));
+		return ResponseEntity.ok(Map.of(MESSAGE_KEY, "Recovery manuscript dispatched."));
+	}
+
+	@PostMapping("/users/{userId}/request-role")
+	public ResponseEntity<Map<String, String>> requestRole(@PathVariable Integer userId, @RequestParam String requestedRole) {
+		try {
+			authService.requestRoleChange(userId, requestedRole);
+			return ResponseEntity.ok(Map.of(MESSAGE_KEY, "Role change request submitted successfully."));
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(MESSAGE_KEY, e.getMessage()));
+		}
+	}
+
+	@GetMapping("/role-requests")
+	public ResponseEntity<List<com.authservice.entity.RoleRequest>> getRoleRequests() {
+		return ResponseEntity.ok(authService.getAllRoleRequests());
+	}
+
+	@PutMapping("/role-requests/{requestId}")
+	public ResponseEntity<Map<String, String>> processRoleRequest(@PathVariable Integer requestId, @RequestParam String status) {
+		try {
+			authService.processRoleRequest(requestId, status);
+			return ResponseEntity.ok(Map.of(MESSAGE_KEY, "Role request processed successfully."));
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(MESSAGE_KEY, e.getMessage()));
+		}
 	}
 
 }

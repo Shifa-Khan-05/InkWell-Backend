@@ -33,7 +33,7 @@ public class NewsletterServiceImpl implements NewsletterService {
 			repository.save(subscriber);
 
 			// Send Confirmation Link (Double Opt-In)
-			String confirmLink = "http://localhost:8080/newsletter/confirm?token=" + token;
+			String confirmLink = "http://localhost:8081/newsletter/confirm?token=" + token;
 			sendEmail(email, "Confirm your InkWell Subscription",
 					"Welcome to InkWell! To start receiving our narratives, please confirm your subscription by clicking here: "
 							+ confirmLink);

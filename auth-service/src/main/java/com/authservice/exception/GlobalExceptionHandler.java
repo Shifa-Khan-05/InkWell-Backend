@@ -11,10 +11,12 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final String ERROR_KEY = "error";
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, String>> handleException(Exception ex) {
         Map<String, String> response = new HashMap<>();
-        response.put("error", "Unable to process your request right now. Please try again.");
+        response.put(ERROR_KEY, "Unable to process your request right now. Please try again.");
         response.put("details", ex.getMessage());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
     }
@@ -23,10 +25,10 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException ex) {
         Map<String, String> response = new HashMap<>();
         if (ex.getMessage() != null && (ex.getMessage().contains("Access is denied") || ex.getMessage().contains("Token") || ex.getMessage().contains("expired"))) {
-             response.put("error", "Your session expired or you are unauthorized. Please login again.");
+             response.put(ERROR_KEY, "Your session expired or you are unauthorized. Please login again.");
              return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
         }
-        response.put("error", ex.getMessage());
+        response.put(ERROR_KEY, ex.getMessage());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
     }
 }

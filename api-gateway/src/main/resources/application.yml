@@ -1,5 +1,5 @@
 server:
-  port: 8080 # Changed to 8081 to avoid conflict if you run a microservice on 8080
+  port: 8081
 
 spring:
   application:
@@ -13,7 +13,9 @@ spring:
         add-to-simple-url-handler-mapping: true
         cors-configurations:
           '[/**]':
-            allowedOrigins: "http://localhost:5173"
+            allowedOrigins: 
+              - "http://localhost:5173"
+              - "http://localhost:5174"
             allowedMethods: "*"
             allowedHeaders: "*"
             allowCredentials: true
@@ -26,7 +28,7 @@ spring:
         - id: auth-service
           uri: lb://AUTH-SERVICE
           predicates:
-            - Path=/auth/**
+            - Path=/auth/**, /uploads/**
 
         - id: post-service
           uri: lb://POST-SERVICE
@@ -68,20 +70,27 @@ spring:
           predicates:
             - Path=/notifications/**
 
-  # Swagger Aggregation Config
-  springdoc:
-    swagger-ui:
-      path: /swagger-ui.html
-      enabled: true
-    api-docs:
-      path: /v3/api-docs
-    group-configs:
-      - group: auth-service
-        paths-to-match: /auth/**
-      - group: post-service
-        paths-to-match: /posts/**
-      - group: payment-service
-        paths-to-match: /payments/**
+# Swagger Aggregation Config for Microservices
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+      - name: 1. Auth Service
+        url: /auth/api-docs
+      - name: 2. Post Service
+        url: /posts/v3/api-docs
+      - name: 3. Comment Service
+        url: /comments/v3/api-docs
+      - name: 4. Taxonomy Service
+        url: /taxonomy/v3/api-docs
+      - name: 5. Notification Service
+        url: /notifications/v3/api-docs
+      - name: 6. Payment Service
+        url: /payments/v3/api-docs
+      - name: 7. Newsletter Service
+        url: /newsletter/v3/api-docs
+      - name: 8. Media Service
+        url: /media/v3/api-docs
 
 eureka:
   client:

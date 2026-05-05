@@ -13,4 +13,5 @@ public class UserRegistrationDTO {
     private String password;
     private String fullName;
     private String role; 
+    private String otp;
 }

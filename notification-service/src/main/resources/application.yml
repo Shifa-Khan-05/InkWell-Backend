@@ -12,11 +12,18 @@ spring:
         url: ${NOTIFICATION_DB_URL:jdbc:mysql://localhost:3306/inkwell_notifications}
         username: ${DB_USER}
         password: ${DB_PASS}
+        hikari:
+            maximum-pool-size: 3
+            minimum-idle: 1
+            connection-timeout: 20000
+            idle-timeout: 300000
+            max-lifetime: 1800000
 
     jpa:
         hibernate:
             ddl-auto: update
         show-sql: true
+        database-platform: org.hibernate.dialect.MySQLDialect
         properties:
             hibernate:
                 dialect: org.hibernate.dialect.MySQLDialect
@@ -56,3 +63,10 @@ logging:
     level:
         org.springframework.mail: DEBUG
         com.notificationservice: DEBUG
+app:
+  security:
+    actuator-path: "/actuator/**"
+
+springdoc:
+  api-docs:
+    path: /notifications/v3/api-docs

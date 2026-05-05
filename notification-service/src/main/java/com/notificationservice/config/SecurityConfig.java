@@ -1,5 +1,6 @@
 package com.notificationservice.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 
 import org.springframework.context.annotation.Configuration;
@@ -8,6 +9,9 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 public class SecurityConfig {
+
+    @Value("${app.security.actuator-path:/actuator/**}")
+    private String actuatorPath;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -21,7 +25,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
 
                 // Allow Actuator for Spring Boot Admin
-                .requestMatchers("/actuator/**").permitAll()
+                .requestMatchers(actuatorPath).permitAll()
 
                 // Allow Swagger if used
                 .requestMatchers(

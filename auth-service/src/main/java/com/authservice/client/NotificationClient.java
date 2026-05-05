@@ -10,4 +10,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 public interface NotificationClient {
 	@PostMapping("/notifications/send-styled-email")
 	void sendStyledEmail(@RequestBody Map<String, String> emailRequest);
+
+	@PostMapping("/notifications/send")
+	void sendNotification(@RequestBody Map<String, Object> notificationRequest);
 }
