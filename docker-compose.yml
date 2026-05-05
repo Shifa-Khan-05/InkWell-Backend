@@ -1,14 +1,214 @@
 version: '3.8'
+
 services:
+  eureka-server:
+    build:
+      context: ./eureka-server
+    container_name: inkwell-eureka
+    ports:
+      - "8761:8761"
+    networks:
+      - inkwell-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+
   rabbitmq:
     image: rabbitmq:3-management
+    container_name: rabbitmq
     ports:
-      - "5672:5672"   # Messaging port
-      - "15672:15672" # Dashboard (Guest/Guest)
-    container_name: inkwell-rabbitmq
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - inkwell-network
 
-  redis:
-    image: redis:latest
+  api-gateway:
+    build:
+      context: ./api-gateway
+    container_name: inkwell-gateway
     ports:
-      - "6379:6379"
-    container_name: inkwell-redis
+      - "8081:8081"
+    depends_on:
+      - eureka-server
+    networks:
+      - inkwell-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - EUREKA_URL=http://eureka-server:8761/eureka/
+
+  auth-service:
+    build:
+      context: ./auth-service
+    container_name: inkwell-auth
+    ports:
+      - "8084:8084"
+    depends_on:
+      - eureka-server     
+    networks:
+      - inkwell-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - EUREKA_URL=http://eureka-server:8761/eureka/
+      - DB_URL=${DB_URL}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+
+  post-service:
+    build:
+      context: ./post-service
+    container_name: inkwell-post
+    ports:
+      - "8082:8082"
+    depends_on:
+      - eureka-server
+    networks:
+      - inkwell-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - EUREKA_URL=http://eureka-server:8761/eureka/
+      - DB_URL=${DB_URL}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+
+  comment-service:
+    build:
+      context: ./comment-service
+    container_name: inkwell-comment
+    ports:
+      - "8083:8083"
+    depends_on:
+      - eureka-server
+    networks:
+      - inkwell-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - EUREKA_URL=http://eureka-server:8761/eureka/
+      - DB_URL=${DB_URL}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+
+  media-service:
+    build:
+      context: ./media-service
+    container_name: inkwell-media
+    ports:
+      - "8087:8087"
+    depends_on:
+      - eureka-server
+    networks:
+      - inkwell-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - EUREKA_URL=http://eureka-server:8761/eureka/
+      - DB_URL=${DB_URL}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+
+  newsletter-service:
+    build:
+      context: ./newsletter-service
+    container_name: inkwell-newsletter
+    ports:
+      - "8086:8086"
+    depends_on:
+      - eureka-server
+    networks:
+      - inkwell-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - EUREKA_URL=http://eureka-server:8761/eureka/
+      - DB_URL=${DB_URL}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+
+  notification-service:
+    build:
+      context: ./notification-service
+    container_name: inkwell-notification
+    ports:
+      - "8090:8090"
+    depends_on:
+      - eureka-server
+      - rabbitmq
+    networks:
+      - inkwell-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - EUREKA_URL=http://eureka-server:8761/eureka/
+      - DB_URL=${DB_URL}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_RABBITMQ_PORT=5672
+
+  payment-service:
+    build:
+      context: ./payment-service
+    container_name: inkwell-payment
+    ports:
+      - "8089:8089"
+    depends_on:
+      - eureka-server
+    networks:
+      - inkwell-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - EUREKA_URL=http://eureka-server:8761/eureka/
+      - DB_URL=${DB_URL}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+
+  taxonomy-service:
+    build:
+      context: ./taxonomy-service
+    container_name: inkwell-taxonomy
+    ports:
+      - "8085:8085"
+    depends_on:
+      - eureka-server
+    networks:
+      - inkwell-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - EUREKA_URL=http://eureka-server:8761/eureka/
+      - DB_URL=${DB_URL}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+
+  website-controller:
+    build:
+      context: ./website-controller
+    container_name: inkwell-websitecontroller
+    ports:
+      - "9001:9001"
+    depends_on:
+      - eureka-server
+    networks:
+      - inkwell-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - EUREKA_URL=http://eureka-server:8761/eureka/
+      - DB_URL=${DB_URL}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+
+  admin-server:
+    build:
+      context: ./admin-server
+    container_name: inkwell-admin
+    ports:
+      - "9090:9090"
+    depends_on:
+      - eureka-server
+    networks:
+      - inkwell-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - EUREKA_URL=http://eureka-server:8761/eureka/
+      - DB_URL=${DB_URL}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+
+networks:
+  inkwell-network:
+    driver: bridge
