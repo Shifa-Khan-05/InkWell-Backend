@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   eureka-server:
-    image: ${DOCKER_USERNAME:-shifakhan05}/inkwell-eureka-server:latest
+    image: ${DOCKER_USERNAME:-shifakhan2005}/inkwell-eureka-server:latest
     container_name: inkwell-eureka
     ports:
       - "8761:8761"
@@ -29,7 +29,7 @@ services:
           memory: 350M
 
   api-gateway:
-    image: ${DOCKER_USERNAME:-shifakhan05}/inkwell-api-gateway:latest
+    image: ${DOCKER_USERNAME:-shifakhan2005}/inkwell-api-gateway:latest
     container_name: inkwell-gateway
     ports:
       - "8081:8081"
@@ -46,7 +46,7 @@ services:
           memory: 350M
 
   auth-service:
-    image: ${DOCKER_USERNAME:-shifakhan05}/inkwell-auth-service:latest
+    image: ${DOCKER_USERNAME:-shifakhan2005}/inkwell-auth-service:latest
     container_name: inkwell-auth
     ports:
       - "8084:8084"
@@ -67,7 +67,7 @@ services:
           memory: 300M
 
   post-service:
-    image: ${DOCKER_USERNAME:-shifakhan05}/inkwell-post-service:latest
+    image: ${DOCKER_USERNAME:-shifakhan2005}/inkwell-post-service:latest
     container_name: inkwell-post
     ports:
       - "8082:8082"
@@ -87,7 +87,7 @@ services:
           memory: 300M
 
   comment-service:
-    image: ${DOCKER_USERNAME:-shifakhan05}/inkwell-comment-service:latest
+    image: ${DOCKER_USERNAME:-shifakhan2005}/inkwell-comment-service:latest
     container_name: inkwell-comment
     ports:
       - "8083:8083"
@@ -107,7 +107,7 @@ services:
           memory: 250M
 
   media-service:
-    image: ${DOCKER_USERNAME:-shifakhan05}/inkwell-media-service:latest
+    image: ${DOCKER_USERNAME:-shifakhan2005}/inkwell-media-service:latest
     container_name: inkwell-media
     ports:
       - "8087:8087"
@@ -127,7 +127,7 @@ services:
           memory: 250M
 
   newsletter-service:
-    image: ${DOCKER_USERNAME:-shifakhan05}/inkwell-newsletter-service:latest
+    image: ${DOCKER_USERNAME:-shifakhan2005}/inkwell-newsletter-service:latest
     container_name: inkwell-newsletter
     ports:
       - "8086:8086"
@@ -147,7 +147,7 @@ services:
           memory: 250M
 
   notification-service:
-    image: ${DOCKER_USERNAME:-shifakhan05}/inkwell-notification-service:latest
+    image: ${DOCKER_USERNAME:-shifakhan2005}/inkwell-notification-service:latest
     container_name: inkwell-notification
     ports:
       - "8090:8090"
@@ -170,7 +170,7 @@ services:
           memory: 250M
 
   payment-service:
-    image: ${DOCKER_USERNAME:-shifakhan05}/inkwell-payment-service:latest
+    image: ${DOCKER_USERNAME:-shifakhan2005}/inkwell-payment-service:latest
     container_name: inkwell-payment
     ports:
       - "8089:8089"
@@ -190,7 +190,7 @@ services:
           memory: 250M
 
   taxonomy-service:
-    image: ${DOCKER_USERNAME:-shifakhan05}/inkwell-taxonomy-service:latest
+    image: ${DOCKER_USERNAME:-shifakhan2005}/inkwell-taxonomy-service:latest
     container_name: inkwell-taxonomy
     ports:
       - "8085:8085"
@@ -210,7 +210,7 @@ services:
           memory: 250M
 
   website-controller:
-    image: ${DOCKER_USERNAME:-shifakhan05}/inkwell-website-controller:latest
+    image: ${DOCKER_USERNAME:-shifakhan2005}/inkwell-website-controller:latest
     container_name: inkwell-websitecontroller
     ports:
       - "9001:9001"
@@ -230,7 +230,7 @@ services:
           memory: 250M
 
   admin-server:
-    image: ${DOCKER_USERNAME:-shifakhan05}/inkwell-admin-server:latest
+    image: ${DOCKER_USERNAME:-shifakhan2005}/inkwell-admin-server:latest
     container_name: inkwell-admin
     ports:
       - "9090:9090"

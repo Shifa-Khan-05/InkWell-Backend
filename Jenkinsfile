@@ -7,7 +7,6 @@ pipeline {
 
     environment {
         BACKEND_REPO = 'https://github.com/Shifa-Khan-05/InkWell-Backend.git'
-        DOCKER_USERNAME = 'shifakhan05'
         DOCKER_CREDS = credentials('dockerhub-creds')
     }
 
@@ -50,7 +49,7 @@ pipeline {
                     ]
 
                     for (service in services) {
-                        def imageName = "${DOCKER_USERNAME}/inkwell-${service}:latest"
+                        def imageName = "${env.DOCKER_CREDS_USR}/inkwell-${service}:latest"
                         sh "docker build -t ${imageName} ./${service}"
                         sh "docker push ${imageName}"
                     }
