@@ -1,395 +1,335 @@
-# 🖋️ InkWell Website Controller (BFF)
+# ✨ InkWell Blogging Platform
 
-The **Website Controller** acts as the **Backend-for-Frontend (BFF)** for the InkWell Blogging Platform. It serves as the **single entry point** for the React frontend and orchestrates communication between multiple backend microservices such as **Auth-Service, Post-Service, Comment-Service, Notification-Service, and Payment-Service**.
+InkWell is a **full-stack, enterprise-grade blogging platform** built using **Microservices Architecture**. It enables users to create, publish, and engage with content while ensuring scalability, modularity, and high performance.
 
-Instead of the frontend making multiple direct service calls, the BFF simplifies the architecture by aggregating data, handling cross-service workflows, and providing a clean API surface for the UI.
-
----
-
-## 📌 Overview
-
-In a microservices architecture, directly connecting the frontend to every service creates:
-
-* Complex frontend logic
-* Too many API calls
-* Difficult state management
-* Increased error handling complexity
-
-The Website Controller solves this by acting as a centralized orchestration layer.
-
-It handles:
-
-* Admin analytics dashboard
-* User + post aggregation
-* Cross-service business logic
-* Graceful failure handling
-* Simplified frontend integration
+The platform is designed to simulate a **real-world production system**, incorporating authentication, content management, payments, notifications, and analytics.
 
 ---
 
-## 🚀 Core Functionalities
+# 📌 Table of Contents
+
+* Overview
+* System Architecture
+* Tech Stack
+* Microservices Breakdown
+* Core Features
+* End-to-End Workflows
+* API Gateway & BFF
+* Security Architecture
+* Setup & Installation
+* Database Design
+* Performance & Scalability
+* Testing Strategy
+* Future Enhancements
 
 ---
 
-## 📊 1. Admin Analytics Dashboard
+# 🚀 Overview
 
-This is one of the most important features of the BFF.
+InkWell follows a **distributed microservices architecture** where each service is responsible for a specific domain.
 
-It provides a **single dashboard response** containing:
+### 🎯 Objectives
 
-### 👤 Identity Tracking
-
-From **Auth-Service**
-
-* Total users
-* Active users
-* Premium users
-* User role distribution
+* Build scalable backend systems
+* Demonstrate microservices communication
+* Implement real-world features (payments, OAuth, notifications)
+* Provide seamless frontend experience
 
 ---
 
-### 📝 Content Insights
+# 🏗️ System Architecture
 
-From **Post-Service**
-
-* Total posts
-* Published posts
-* Draft posts
-* Most viewed posts
-
----
-
-### ❤️ Engagement Metrics
-
-From **Comment-Service + Notification-Service**
-
-* Total comments
-* Total likes
-* Recent activity alerts
-
----
-
-### 🏆 Top Performing Posts
-
-Logic-based sorting to return:
-
-```text id="bff001"
-Top 5 Most Liked Posts
-```
-
-Used directly in Admin Dashboard cards.
-
----
-
-### ⚙️ Platform Health
-
-Tracks service availability:
-
-* Auth-Service
-* Post-Service
-* Comment-Service
-* Notification-Service
-
-System status examples:
-
-```text id="bff002"
-OPERATIONAL
-DEGRADED
-FAILED
-```
-
----
-
-## 🔄 2. Service Orchestration
-
-The BFF acts like a smart coordinator.
-
-### Uses OpenFeign Clients for:
-
-* User details
-* Posts
-* Comments
-* Notifications
-* Payment status
-
----
-
-### Example
-
-Instead of React doing:
-
-```text id="bff003"
-GET /users
-GET /posts
-GET /comments
-GET /notifications
-```
-
-It only calls:
-
-```text id="bff004"
-GET /api/admin/summary
-```
-
-and receives everything together.
-
----
-
-## 🛠️ Tech Stack
-
-| Layer         | Technology             |
-| ------------- | ---------------------- |
-| Language      | Java 17                |
-| Framework     | Spring Boot 3.x        |
-| Communication | Spring Cloud OpenFeign |
-| Discovery     | Eureka Client          |
-| Utilities     | Lombok                 |
-| Monitoring    | Spring Boot Actuator   |
-
----
-
-## 🏗️ System Architecture
-
-```text id="bff005"
-React Frontend
-      ↓
-Website Controller (BFF)
-      ↓
-────────────────────────────
+```text id="arch001"
+React Frontend (UI)
+        ↓
+Website Controller (BFF) / API Gateway
+        ↓
+────────────────────────────────────
 Auth-Service
 Post-Service
 Comment-Service
+Media-Service
 Notification-Service
+Newsletter-Service
 Payment-Service
-────────────────────────────
+Taxonomy-Service
+────────────────────────────────────
+        ↓
+     MySQL Databases
 ```
 
 ---
 
-## 📡 API Endpoints
+# 🛠️ Tech Stack
+
+## 💻 Frontend
+
+* React.js
+* Tailwind CSS
+* Framer Motion
 
 ---
 
-## 🔹 Admin Endpoints
-
-| Method | Endpoint             | Description                  |
-| ------ | -------------------- | ---------------------------- |
-| GET    | `/api/admin/summary` | Full admin dashboard summary |
-| GET    | `/api/admin/users`   | Fetch all users              |
-| GET    | `/api/admin/health`  | Service health check         |
-
----
-
-## 🔹 Post Endpoints (Proxied)
-
-| Method | Endpoint               | Description        |
-| ------ | ---------------------- | ------------------ |
-| GET    | `/api/posts/published` | Public feed        |
-| POST   | `/api/posts/create`    | Create post        |
-| GET    | `/api/posts/{slug}`    | Fetch post details |
-
----
-
-## 🔹 User Endpoints
-
-| Method | Endpoint            | Description    |
-| ------ | ------------------- | -------------- |
-| GET    | `/api/profile/{id}` | Get profile    |
-| PUT    | `/api/profile/{id}` | Update profile |
-
----
-
-## 🔹 Notification Endpoints
-
-| Method | Endpoint                        | Description        |
-| ------ | ------------------------------- | ------------------ |
-| GET    | `/api/notifications/{id}`       | User notifications |
-| GET    | `/api/notifications/count/{id}` | Unread count       |
-
----
-
-## 🔄 Example Workflow (Important 🔥)
-
-## Admin Dashboard Request
-
-### Step 1
-
-Frontend calls:
-
-```text id="bff006"
-GET /api/admin/summary
-```
-
----
-
-### Step 2
-
-BFF calls:
-
-* Auth-Service
-* Post-Service
-* Comment-Service
-* Notification-Service
-
----
-
-### Step 3
-
-BFF merges all data
-
-↓
-
-Creates unified DTO
-
-↓
-
-Returns one clean JSON response
-
----
-
-### Step 4
-
-Frontend renders dashboard instantly
-
----
-
-## ⚙️ Configuration
-
-### application.yml
-
-```yaml id="bff007"
-server:
-  port: 8080
-
-spring:
-  application:
-    name: website-controller
-
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
-
-AUTH_SERVICE_URL: http://AUTH-SERVICE
-POST_SERVICE_URL: http://POST-SERVICE
-COMMENT_SERVICE_URL: http://COMMENT-SERVICE
-NOTIFICATION_SERVICE_URL: http://NOTIFICATION-SERVICE
-PAYMENT_SERVICE_URL: http://PAYMENT-SERVICE
-```
-
----
-
-## 🚦 Setup & Installation
-
-### ✅ Prerequisites
+## ⚙️ Backend
 
 * Java 17
-* Maven
-* Eureka Server running on `8761`
-* Core services running:
+* Spring Boot
+* Spring Security
+* Spring Cloud
 
-  * Auth-Service
-  * Post-Service
-
-Optional:
-
-* Comment-Service
-* Notification-Service
-* Payment-Service
+  * Eureka (Service Discovery)
+  * OpenFeign (Communication)
+  * API Gateway
 
 ---
 
-### ▶️ Run Application
+## 🗄️ Database
 
-```bash id="bff008"
-mvn clean install
-mvn spring-boot:run
+* MySQL (Database per service pattern)
+
+---
+
+## 🔐 Security
+
+* JWT Authentication
+* Google OAuth2
+* Role-Based Access Control (RBAC)
+
+---
+
+## 📧 Email
+
+* JavaMailSender (SMTP)
+
+---
+
+## 💳 Payments
+
+* Razorpay Integration
+
+---
+
+# 🧩 Microservices Breakdown
+
+---
+
+## 🔐 Auth-Service
+
+Handles identity and security.
+
+### Features:
+
+* User registration/login
+* JWT token generation
+* Google OAuth2 login
+* Role management:
+
+```text id="role001"
+READER | AUTHOR | ADMIN | PREMIUM
 ```
 
 ---
 
-### 🔍 Verification
+## 📝 Post-Service
 
-Health Check:
+Manages content lifecycle.
 
-```text id="bff009"
-http://localhost:8080/actuator/health
+### Features:
+
+* Draft → Publish workflow
+* Slug generation (SEO-friendly URLs)
+* Reading time calculation
+* Persistent like/unlike system
+
+---
+
+## 💬 Comment-Service
+
+Handles user discussions.
+
+### Features:
+
+* Add comments
+* Nested replies
+* Moderation system
+* Comment count tracking
+
+---
+
+## 🖼️ Media-Service
+
+Handles media assets.
+
+### Features:
+
+* Image upload (multipart)
+* URL generation
+* File storage
+* Soft delete
+
+---
+
+## 🔔 Notification-Service
+
+Manages alerts.
+
+### Features:
+
+* Like/comment notifications
+* Admin broadcasts
+* Unread count tracking
+* Email alerts
+
+---
+
+## 📧 Newsletter-Service
+
+Handles subscriptions.
+
+### Features:
+
+* Double opt-in subscription
+* Welcome emails
+* Bulk email broadcasting
+* Post notifications
+
+---
+
+## 💳 Payment-Service
+
+Handles premium subscriptions.
+
+### Features:
+
+* Razorpay order creation
+* Payment verification
+* Role upgrade via Auth-Service
+
+---
+
+## 🏷️ Taxonomy-Service
+
+Handles classification.
+
+### Features:
+
+* Hierarchical categories
+* Tag system
+* Trending tags
+* SEO-friendly slugs
+
+---
+
+## 🌐 Website Controller (BFF)
+
+Acts as frontend gateway.
+
+### Features:
+
+* Aggregates data from all services
+* Admin dashboard analytics
+* Simplifies frontend API calls
+* Handles service failures gracefully
+
+---
+
+# 📡 Core Features
+
+* ✍️ Create, edit, and publish blogs
+* ❤️ Like/unlike system with persistence
+* 💬 Threaded comment system
+* 🖼️ Image upload and management
+* 🔔 Real-time notifications
+* 📧 Newsletter subscription system
+* 💳 Premium subscription via Razorpay
+* 🏷️ Categories and tags
+* 📊 Admin analytics dashboard
+
+---
+
+# 🔄 End-to-End Workflows
+
+---
+
+## 📝 Post Publishing Flow
+
+```text id="flow001"
+Frontend → Media-Service → Post-Service → Taxonomy-Service → Notification-Service → Newsletter-Service
 ```
 
-Swagger (if enabled):
+### Steps:
 
-```text id="bff010"
-http://localhost:8080/swagger-ui.html
+1. User uploads image
+2. Media-Service returns URL
+3. Post-Service creates post
+4. Tags assigned
+5. Notifications triggered
+6. Subscribers notified
+
+---
+
+## 💳 Payment Flow
+
+```text id="flow002"
+Frontend → Payment-Service → Razorpay → Payment-Service → Auth-Service
+```
+
+### Steps:
+
+1. Order created
+2. User pays via Razorpay
+3. Payment verified
+4. Auth-Service upgrades role
+
+---
+
+## 💬 Comment Flow
+
+```text id="flow003"
+Frontend → Comment-Service → Notification-Service
 ```
 
 ---
 
-## 🛡️ Error Handling Strategy
+# 🔐 Security Architecture
 
-The Website Controller uses:
-
-# Graceful Degradation
-
-### OPERATIONAL
-
-All services working
-
+* JWT for stateless authentication
+* OAuth2 for social login
+* RBAC for access control
+* Secure payment verification
+* Environment variable protection
 ---
 
-### DEGRADED
+## 🛢️ Database Setup
 
-Auxiliary services down
-
-Example:
-
-```text id="bff011"
-Comment-Service unavailable
-```
-
-Dashboard still works
-
----
-
-### FAILED
-
-Critical services down
-
-Example:
-
-```text id="bff012"
-Auth-Service + Post-Service down
-```
-
-Returns structured JSON error for frontend Toastify.
-
----
-
-## 📁 Project Structure
-
-```text id="bff013"
-website-controller
-│
-├── client         # Feign Clients
-├── controller     # REST APIs
-├── dto            # Aggregated response DTOs
-├── service        # Dashboard logic
-├── config         # Feign + Security config
-└── util           # Error handling helpers
+```sql id="db001"
+CREATE DATABASE inkwell_auth;
+CREATE DATABASE inkwell_post;
+CREATE DATABASE inkwell_comment;
+CREATE DATABASE inkwell_media;
+CREATE DATABASE inkwell_notification;
+CREATE DATABASE inkwell_newsletter;
+CREATE DATABASE inkwell_payment;
+CREATE DATABASE inkwell_taxonomy;
 ```
 
 ---
 
-## 🧪 Testing
+# 🧪 Testing Strategy
 
-Includes:
+* Unit Testing (JUnit, Mockito)
+* API Testing (Postman)
+* Frontend Testing (React Testing Library, Cypress, Jest)
 
-* Unit Tests
-* Feign Mock Testing
-* Integration Testing
-* Failure Simulation Tests
+---
 
-### Run Tests
+# ⚡ Performance & Scalability
 
-```bash id="bff014"
-mvn test
-```
+* Stateless services
+* Independent deployment
+* Database per service
+* Feign communication
+* API Gateway routing
+* Graceful degradation
+
+---
