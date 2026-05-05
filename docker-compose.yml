@@ -2,8 +2,7 @@ version: '3.8'
 
 services:
   eureka-server:
-    build:
-      context: ./eureka-server
+    image: ${DOCKER_USERNAME:-shifakhan05}/inkwell-eureka-server:latest
     container_name: inkwell-eureka
     ports:
       - "8761:8761"
@@ -11,6 +10,10 @@ services:
       - inkwell-network
     environment:
       - SPRING_PROFILES_ACTIVE=prod
+    deploy:
+      resources:
+        limits:
+          memory: 350M
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -20,10 +23,13 @@ services:
       - "15672:15672"
     networks:
       - inkwell-network
+    deploy:
+      resources:
+        limits:
+          memory: 350M
 
   api-gateway:
-    build:
-      context: ./api-gateway
+    image: ${DOCKER_USERNAME:-shifakhan05}/inkwell-api-gateway:latest
     container_name: inkwell-gateway
     ports:
       - "8081:8081"
@@ -34,15 +40,18 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=prod
       - EUREKA_URL=http://eureka-server:8761/eureka/
+    deploy:
+      resources:
+        limits:
+          memory: 350M
 
   auth-service:
-    build:
-      context: ./auth-service
+    image: ${DOCKER_USERNAME:-shifakhan05}/inkwell-auth-service:latest
     container_name: inkwell-auth
     ports:
       - "8084:8084"
     depends_on:
-      - eureka-server     
+      - eureka-server
     networks:
       - inkwell-network
     environment:
@@ -52,10 +61,13 @@ services:
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
       - JWT_SECRET=${JWT_SECRET}
+    deploy:
+      resources:
+        limits:
+          memory: 300M
 
   post-service:
-    build:
-      context: ./post-service
+    image: ${DOCKER_USERNAME:-shifakhan05}/inkwell-post-service:latest
     container_name: inkwell-post
     ports:
       - "8082:8082"
@@ -69,10 +81,13 @@ services:
       - DB_URL=${DB_URL}
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
+    deploy:
+      resources:
+        limits:
+          memory: 300M
 
   comment-service:
-    build:
-      context: ./comment-service
+    image: ${DOCKER_USERNAME:-shifakhan05}/inkwell-comment-service:latest
     container_name: inkwell-comment
     ports:
       - "8083:8083"
@@ -86,10 +101,13 @@ services:
       - DB_URL=${DB_URL}
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
+    deploy:
+      resources:
+        limits:
+          memory: 250M
 
   media-service:
-    build:
-      context: ./media-service
+    image: ${DOCKER_USERNAME:-shifakhan05}/inkwell-media-service:latest
     container_name: inkwell-media
     ports:
       - "8087:8087"
@@ -103,10 +121,13 @@ services:
       - DB_URL=${DB_URL}
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
+    deploy:
+      resources:
+        limits:
+          memory: 250M
 
   newsletter-service:
-    build:
-      context: ./newsletter-service
+    image: ${DOCKER_USERNAME:-shifakhan05}/inkwell-newsletter-service:latest
     container_name: inkwell-newsletter
     ports:
       - "8086:8086"
@@ -120,10 +141,13 @@ services:
       - DB_URL=${DB_URL}
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
+    deploy:
+      resources:
+        limits:
+          memory: 250M
 
   notification-service:
-    build:
-      context: ./notification-service
+    image: ${DOCKER_USERNAME:-shifakhan05}/inkwell-notification-service:latest
     container_name: inkwell-notification
     ports:
       - "8090:8090"
@@ -140,10 +164,13 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - SPRING_RABBITMQ_HOST=rabbitmq
       - SPRING_RABBITMQ_PORT=5672
+    deploy:
+      resources:
+        limits:
+          memory: 250M
 
   payment-service:
-    build:
-      context: ./payment-service
+    image: ${DOCKER_USERNAME:-shifakhan05}/inkwell-payment-service:latest
     container_name: inkwell-payment
     ports:
       - "8089:8089"
@@ -157,10 +184,13 @@ services:
       - DB_URL=${DB_URL}
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
+    deploy:
+      resources:
+        limits:
+          memory: 250M
 
   taxonomy-service:
-    build:
-      context: ./taxonomy-service
+    image: ${DOCKER_USERNAME:-shifakhan05}/inkwell-taxonomy-service:latest
     container_name: inkwell-taxonomy
     ports:
       - "8085:8085"
@@ -174,10 +204,13 @@ services:
       - DB_URL=${DB_URL}
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
+    deploy:
+      resources:
+        limits:
+          memory: 250M
 
   website-controller:
-    build:
-      context: ./website-controller
+    image: ${DOCKER_USERNAME:-shifakhan05}/inkwell-website-controller:latest
     container_name: inkwell-websitecontroller
     ports:
       - "9001:9001"
@@ -191,10 +224,13 @@ services:
       - DB_URL=${DB_URL}
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
+    deploy:
+      resources:
+        limits:
+          memory: 250M
 
   admin-server:
-    build:
-      context: ./admin-server
+    image: ${DOCKER_USERNAME:-shifakhan05}/inkwell-admin-server:latest
     container_name: inkwell-admin
     ports:
       - "9090:9090"
@@ -208,6 +244,10 @@ services:
       - DB_URL=${DB_URL}
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
+    deploy:
+      resources:
+        limits:
+          memory: 300M
 
 networks:
   inkwell-network:
