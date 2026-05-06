@@ -4,22 +4,27 @@ server:
 spring:
   application:
     name: api-gateway
+
   cloud:
     gateway:
       default-filters:
-        # Prevents "Multiple CORS header" errors in browsers
         - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_FIRST
+
       globalcors:
         add-to-simple-url-handler-mapping: true
+
         cors-configurations:
           '[/**]':
-            allowedOrigins: 
+            allowedOrigins:
               - "http://localhost:5173"
               - "http://localhost:5174"
+
             allowedMethods: "*"
             allowedHeaders: "*"
             allowCredentials: true
+
       routes:
+
         - id: website-controller
           uri: lb://WEBSITE-CONTROLLER
           predicates:
@@ -28,7 +33,7 @@ spring:
         - id: auth-service
           uri: lb://AUTH-SERVICE
           predicates:
-            - Path=/auth/**, /uploads/**
+            - Path=/auth/**,/uploads/**
 
         - id: post-service
           uri: lb://POST-SERVICE
@@ -70,31 +75,44 @@ spring:
           predicates:
             - Path=/notifications/**
 
-# Swagger Aggregation Config for Microservices
+# Swagger Aggregation
 springdoc:
+  api-docs:
+    enabled: true
+
   swagger-ui:
+    enabled: true
     path: /swagger-ui.html
+
     urls:
-      - name: 1. Auth Service
+      - name: Auth Service
         url: /auth/api-docs
-      - name: 2. Post Service
+
+      - name: Post Service
         url: /posts/v3/api-docs
-      - name: 3. Comment Service
+
+      - name: Comment Service
         url: /comments/v3/api-docs
-      - name: 4. Taxonomy Service
+
+      - name: Taxonomy Service
         url: /taxonomy/v3/api-docs
-      - name: 5. Notification Service
+
+      - name: Notification Service
         url: /notifications/v3/api-docs
-      - name: 6. Payment Service
+
+      - name: Payment Service
         url: /payments/v3/api-docs
-      - name: 7. Newsletter Service
+
+      - name: Newsletter Service
         url: /newsletter/v3/api-docs
-      - name: 8. Media Service
+
+      - name: Media Service
         url: /media/v3/api-docs
 
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: http://eureka-server:8761/eureka/
+
   instance:
     prefer-ip-address: true
