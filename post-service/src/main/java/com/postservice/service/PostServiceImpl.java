@@ -38,6 +38,9 @@ import java.util.stream.Collectors;
 @Slf4j
 public class PostServiceImpl implements PostService {
 
+	@org.springframework.beans.factory.annotation.Value("${gateway.url:https://3.108.190.193.nip.io}")
+    private String gatewayUrl;
+
 	private final PostRepository postRepository;
 	private final LikeRepository likeRepository;
 	private final ModelMapper modelMapper;
@@ -242,7 +245,7 @@ public class PostServiceImpl implements PostService {
 		log.debug("Saving file to: {}", filePath.toAbsolutePath());
 		Files.copy(image.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-		return "http://localhost:8081/post_uploads/" + fileName;
+		return gatewayUrl + "/post_uploads/" + fileName;
 	}
 
 	private String generateUniqueSlug(String title) {
@@ -258,8 +261,8 @@ public class PostServiceImpl implements PostService {
 
 	private PostResponseDTO enrichWithAuthor(Post post) {
 		PostResponseDTO dto = modelMapper.map(post, PostResponseDTO.class);
-		if (dto.getFeaturedImageUrl() != null && dto.getFeaturedImageUrl().startsWith("http://localhost:8080/")) {
-			dto.setFeaturedImageUrl(dto.getFeaturedImageUrl().replace("http://localhost:8080/", "http://localhost:8081/"));
+		if (dto.getFeaturedImageUrl() != null && (dto.getFeaturedImageUrl().startsWith("http://localhost:8080/") || dto.getFeaturedImageUrl().startsWith("http://localhost:8081/"))) {
+			dto.setFeaturedImageUrl(dto.getFeaturedImageUrl().replace("http://localhost:8080/", gatewayUrl + "/").replace("http://localhost:8081/", gatewayUrl + "/"));
 		}
 		
 		try {

@@ -24,6 +24,9 @@ import java.nio.file.*;
 @Slf4j
 public class AuthServiceImpl implements AuthService {
 
+    @org.springframework.beans.factory.annotation.Value("${gateway.url:https://3.108.190.193.nip.io}")
+    private String gatewayUrl;
+
     private final UserRepository userRepository;
     private final RoleRequestRepository roleRequestRepository;
     private final EmailOtpRepository emailOtpRepository;
@@ -191,7 +194,7 @@ public class AuthServiceImpl implements AuthService {
                 Files.copy(image.getInputStream(), uploadPath.resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
                 
                 // Assuming your resource handler maps /uploads/**
-                user.setProfileImageUrl("http://localhost:8081/uploads/" + fileName);
+                user.setProfileImageUrl(gatewayUrl + "/uploads/" + fileName);
                 log.debug("Profile image updated for user ID: {}", userId);
             } catch (IOException e) {
                 log.error("Image upload failed for user ID {}: {}", userId, e.getMessage());
@@ -370,8 +373,8 @@ public class AuthServiceImpl implements AuthService {
 
     private UserResponseDTO mapToResponseDTO(User user) {
         String avatar = user.getProfileImageUrl();
-        if (avatar != null && avatar.startsWith("http://localhost:8080/")) {
-            avatar = avatar.replace("http://localhost:8080/", "http://localhost:8081/");
+        if (avatar != null && (avatar.startsWith("http://localhost:8080/") || avatar.startsWith("http://localhost:8081/"))) {
+            avatar = avatar.replace("http://localhost:8080/", gatewayUrl + "/").replace("http://localhost:8081/", gatewayUrl + "/");
         }
         return new UserResponseDTO(
             user.getUserId(), 
