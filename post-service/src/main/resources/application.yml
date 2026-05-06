@@ -10,7 +10,7 @@ spring:
   # ✅ Added Redis Configuration
   data:
     redis:
-      host: localhost
+      host: redis
       port: 6379
 
   servlet:
