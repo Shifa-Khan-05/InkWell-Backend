@@ -163,6 +163,12 @@ public class AuthServiceImpl implements AuthService {
         return user.getRole();
     }
 
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.amazonaws.services.s3.AmazonS3 s3Client;
+
+    @org.springframework.beans.factory.annotation.Value("${aws.s3.bucket:inkwell-bucket}")
+    private String bucketName;
+
     @Override
     public UserResponseDTO updateProfileWithFile(int userId, String fullName, String username, String bio, Integer age, String password, MultipartFile image) {
         log.info("Identity update initiated for user ID: {}", userId);
@@ -184,17 +190,23 @@ public class AuthServiceImpl implements AuthService {
 
         if (image != null && !image.isEmpty()) {
             try {
-                String uploadDir = "uploads/";
-                Path uploadPath = Paths.get(uploadDir);
-                if (!Files.exists(uploadPath))
-                    Files.createDirectories(uploadPath);
-                
-                    
                 String fileName = "user_" + userId + "_" + System.currentTimeMillis() + ".jpg";
-                Files.copy(image.getInputStream(), uploadPath.resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
                 
-                // Assuming your resource handler maps /uploads/**
-                user.setProfileImageUrl(gatewayUrl + "/uploads/" + fileName);
+                if (s3Client != null) {
+                    // Upload to S3
+                    com.amazonaws.services.s3.model.ObjectMetadata metadata = new com.amazonaws.services.s3.model.ObjectMetadata();
+                    metadata.setContentLength(image.getSize());
+                    metadata.setContentType(image.getContentType());
+                    s3Client.putObject(bucketName, "uploads/" + fileName, image.getInputStream(), metadata);
+                    user.setProfileImageUrl(s3Client.getUrl(bucketName, "uploads/" + fileName).toString());
+                } else {
+                    // Fallback to local storage
+                    String uploadDir = "uploads/";
+                    Path uploadPath = Paths.get(uploadDir);
+                    if (!Files.exists(uploadPath)) Files.createDirectories(uploadPath);
+                    Files.copy(image.getInputStream(), uploadPath.resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
+                    user.setProfileImageUrl(gatewayUrl + "/uploads/" + fileName);
+                }
                 log.debug("Profile image updated for user ID: {}", userId);
             } catch (IOException e) {
                 log.error("Image upload failed for user ID {}: {}", userId, e.getMessage());

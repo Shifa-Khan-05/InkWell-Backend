@@ -41,6 +41,12 @@ public class PostServiceImpl implements PostService {
 	@org.springframework.beans.factory.annotation.Value("${gateway.url:https://3.108.190.193.nip.io}")
     private String gatewayUrl;
 
+	@org.springframework.beans.factory.annotation.Autowired(required = false)
+	private com.amazonaws.services.s3.AmazonS3 s3Client;
+
+	@org.springframework.beans.factory.annotation.Value("${aws.s3.bucket:inkwell-bucket}")
+	private String bucketName;
+
 	private final PostRepository postRepository;
 	private final LikeRepository likeRepository;
 	private final ModelMapper modelMapper;
@@ -235,8 +241,16 @@ public class PostServiceImpl implements PostService {
 			originalFilename = "default.jpg";
 		}
 		String fileName = System.currentTimeMillis() + "_" + originalFilename.replaceAll("[^a-zA-Z0-9.-]", "_");
-		Path uploadPath = Paths.get("uploads");
 
+		if (s3Client != null) {
+			com.amazonaws.services.s3.model.ObjectMetadata metadata = new com.amazonaws.services.s3.model.ObjectMetadata();
+			metadata.setContentLength(image.getSize());
+			metadata.setContentType(image.getContentType());
+			s3Client.putObject(bucketName, "post_uploads/" + fileName, image.getInputStream(), metadata);
+			return s3Client.getUrl(bucketName, "post_uploads/" + fileName).toString();
+		}
+
+		Path uploadPath = Paths.get("uploads");
 		if (!Files.exists(uploadPath)) {
 			Files.createDirectories(uploadPath);
 		}
