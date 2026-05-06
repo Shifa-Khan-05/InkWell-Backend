@@ -1,5 +1,6 @@
 server:
   port: 8081
+  forward-headers-strategy: framework
 
 spring:
   application:
@@ -34,7 +35,7 @@ spring:
         - id: auth-service
           uri: lb://AUTH-SERVICE
           predicates:
-            - Path=/auth/**,/uploads/**
+            - Path=/auth/**,/uploads/**,/oauth2/**,/login/**
 
         - id: post-service
           uri: lb://POST-SERVICE
