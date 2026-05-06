@@ -1,6 +1,7 @@
 package com.authservice.service;
 
 import com.authservice.dto.ProfileUpdateDTO;
+
 import com.authservice.dto.UserRegistrationDTO;
 import com.authservice.dto.UserResponseDTO;
 import com.authservice.entity.User;
