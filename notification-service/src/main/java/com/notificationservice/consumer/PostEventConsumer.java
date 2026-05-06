@@ -14,7 +14,7 @@ public class PostEventConsumer {
 	@Autowired
 	private NotificationServiceImpl notificationService;
 
-	@RabbitListener(queues = "post_notification_queue")
+	@RabbitListener(queuesToDeclare = @org.springframework.amqp.rabbit.annotation.Queue("post_notification_queue"))
 	public void consumePostMessage(Map<String, Object> message) {
 		log.info("Received message from RabbitMQ: {}", message.get("title"));
 
