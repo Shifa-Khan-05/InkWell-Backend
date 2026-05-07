@@ -15,9 +15,10 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/posts/**", "/post_uploads/**", "/actuator/**").permitAll()
                 .anyRequest().permitAll()
-            );
+            )
+            .httpBasic(basic -> basic.disable())
+            .formLogin(form -> form.disable());
         return http.build();
     }
 }

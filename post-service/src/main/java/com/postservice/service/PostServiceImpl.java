@@ -251,7 +251,7 @@ public class PostServiceImpl implements PostService {
 			return s3Client.getUrl(bucketName, "post_uploads/" + fileName).toString();
 		}
 
-		Path uploadPath = Paths.get("uploads");
+		Path uploadPath = Paths.get("post_uploads");
 		if (!Files.exists(uploadPath)) {
 			Files.createDirectories(uploadPath);
 		}
@@ -285,7 +285,7 @@ public class PostServiceImpl implements PostService {
 			UserResponseDTO author = authClient.getUserById(post.getAuthorId());
 			dto.setFullName(author.getFullName());
 		} catch (Exception e) {
-			log.warn("Author lookup failed for ID {}: {}", post.getAuthorId(), e.getMessage());
+			log.warn("Author lookup failed for ID {}: {}. This usually means a connection issue to Auth-Service.", post.getAuthorId(), e.getMessage());
 			dto.setFullName("InkWell Author");
 		}
 		return dto;
