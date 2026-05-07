@@ -203,10 +203,13 @@ public class AuthServiceImpl implements AuthService {
                     user.setProfileImageUrl(s3Client.getUrl(bucketName, "uploads/" + fileName).toString());
                 } else {
                     // Fallback to local storage
-                    String uploadDir = "uploads/";
-                    Path uploadPath = Paths.get(uploadDir);
-                    if (!Files.exists(uploadPath)) Files.createDirectories(uploadPath);
-                    Files.copy(image.getInputStream(), uploadPath.resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
+                    Path uploadPath = Paths.get("uploads");
+                    if (!Files.exists(uploadPath)) {
+                        Files.createDirectories(uploadPath);
+                    }
+                    
+                    Path filePath = uploadPath.resolve(fileName);
+                    Files.copy(image.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
                     user.setProfileImageUrl(gatewayUrl + "/uploads/" + fileName);
                 }
                 log.debug("Profile image updated for user ID: {}", userId);
