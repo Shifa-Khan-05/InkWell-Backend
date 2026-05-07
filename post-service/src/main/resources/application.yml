@@ -10,7 +10,7 @@ spring:
   # ✅ Added Redis Configuration
   data:
     redis:
-      host: redis
+      host: inkwell-redis
       port: 6379
 
   servlet:
@@ -41,7 +41,7 @@ spring:
 eureka:
   client:
     service-url:
-      defaultZone: http://eureka-server:8761/eureka/
+      defaultZone: http://inkwell-eureka:8761/eureka/
   instance:
     prefer-ip-address: true # ✅ Changed to true for better microservice networking
     instance-id: ${spring.application.name}:${server.port}
