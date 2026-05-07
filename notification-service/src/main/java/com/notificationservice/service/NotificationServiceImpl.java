@@ -115,7 +115,8 @@ public class NotificationServiceImpl {
 
 			mailSender.send(message);
 		} catch (Exception e) {
-			log.error("Styled Email Error: {}", e.getMessage());
+			log.error("SMTP DISPATCH FAILURE for {}: {}. Root Cause: {}", recipientEmail, e.getMessage(), 
+                e.getCause() != null ? e.getCause().getMessage() : "Check SMTP Credentials/Port 587");
 		}
 	}
 
