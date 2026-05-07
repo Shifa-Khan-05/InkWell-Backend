@@ -110,7 +110,8 @@ public class NotificationServiceImpl {
 			helper.setTo(recipientEmail);
 			helper.setSubject("InkWell | " + subject);
 			helper.setText(htmlContent, true);
-			helper.setFrom("alerts@inkwell.com");
+			// ✅ FIX: Gmail requires the 'From' address to match the authenticated user
+			helper.setFrom(System.getenv("EMAIL_USER") != null ? System.getenv("EMAIL_USER") : "shifakhan2005@gmail.com");
 
 			mailSender.send(message);
 		} catch (Exception e) {

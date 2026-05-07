@@ -10,13 +10,14 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 public class SecurityConfig {
 
-	// DO THIS IN ALL SERVICES (Post, Auth, Comment)
-	@Bean
-	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-	    http
-	        .cors(cors -> cors.disable()) // ✅ Explicitly disable local CORS
-	        .csrf(csrf -> csrf.disable())
-	        .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
-	    return http.build();
-	}
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .csrf(csrf -> csrf.disable())
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/comments/**", "/actuator/**").permitAll()
+                .anyRequest().permitAll()
+            );
+        return http.build();
+    }
 }
