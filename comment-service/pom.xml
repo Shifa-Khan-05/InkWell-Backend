@@ -9,7 +9,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.5.0</version>
+		<version>3.4.1</version>
 		<relativePath />
 	</parent>
 
@@ -21,7 +21,7 @@
 
 	<properties>
 		<java.version>17</java.version>
-		<spring-cloud.version>2025.0.2</spring-cloud.version>
+		<spring-cloud.version>2024.0.0</spring-cloud.version>
 		<lombok.version>1.18.34</lombok.version>
 		
 		<sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>

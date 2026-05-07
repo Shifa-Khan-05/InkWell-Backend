@@ -10,7 +10,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.14</version>
+        <version>3.4.1</version>
         <relativePath/>
     </parent>
 
@@ -24,7 +24,7 @@
     <!-- Properties -->
     <properties>
         <java.version>17</java.version>
-        <spring-cloud.version>2025.0.2</spring-cloud.version>
+        <spring-cloud.version>2024.0.0</spring-cloud.version>
         <lombok.version>1.18.38</lombok.version>
         <sonar-maven-plugin.version>3.10.0.2594</sonar-maven-plugin.version>
         
