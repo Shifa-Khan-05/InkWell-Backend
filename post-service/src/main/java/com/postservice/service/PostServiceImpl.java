@@ -246,7 +246,8 @@ public class PostServiceImpl implements PostService {
 			com.amazonaws.services.s3.model.ObjectMetadata metadata = new com.amazonaws.services.s3.model.ObjectMetadata();
 			metadata.setContentLength(image.getSize());
 			metadata.setContentType(image.getContentType());
-			s3Client.putObject(bucketName, "post_uploads/" + fileName, image.getInputStream(), metadata);
+			s3Client.putObject(new com.amazonaws.services.s3.model.PutObjectRequest(bucketName, "post_uploads/" + fileName, image.getInputStream(), metadata)
+				.withCannedAcl(com.amazonaws.services.s3.model.CannedAccessControlList.PublicRead));
 			return s3Client.getUrl(bucketName, "post_uploads/" + fileName).toString();
 		}
 

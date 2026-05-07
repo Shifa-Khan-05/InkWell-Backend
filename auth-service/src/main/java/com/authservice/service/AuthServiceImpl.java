@@ -198,7 +198,8 @@ public class AuthServiceImpl implements AuthService {
                     com.amazonaws.services.s3.model.ObjectMetadata metadata = new com.amazonaws.services.s3.model.ObjectMetadata();
                     metadata.setContentLength(image.getSize());
                     metadata.setContentType(image.getContentType());
-                    s3Client.putObject(bucketName, "uploads/" + fileName, image.getInputStream(), metadata);
+                    s3Client.putObject(new com.amazonaws.services.s3.model.PutObjectRequest(bucketName, "uploads/" + fileName, image.getInputStream(), metadata)
+                        .withCannedAcl(com.amazonaws.services.s3.model.CannedAccessControlList.PublicRead));
                     user.setProfileImageUrl(s3Client.getUrl(bucketName, "uploads/" + fileName).toString());
                 } else {
                     // Fallback to local storage
