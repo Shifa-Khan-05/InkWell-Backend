@@ -214,24 +214,19 @@ public class AuthServiceImpl implements AuthService {
                 
                 if (!s3Success) {
                     // Fallback to local storage
-                    try {
-                        Path uploadPath = Paths.get("uploads");
-                        if (!Files.exists(uploadPath)) {
-                            Files.createDirectories(uploadPath);
-                        }
-                        
-                        Path filePath = uploadPath.resolve(fileName);
-                        log.info("Attempting to save profile image to: {}", filePath.toAbsolutePath());
-                        Files.copy(image.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-                        user.setProfileImageUrl(gatewayUrl + "/uploads/" + fileName);
-                    } catch (IOException e) {
-                        log.error("CRITICAL: Failed to save profile image to disk. Check folder permissions (chmod 777 uploads). Error: {}", e.getMessage());
-                        throw new com.authservice.exception.BadRequestException("Server cannot write profile storage: " + e.getMessage());
+                    Path uploadPath = Paths.get("uploads");
+                    if (!Files.exists(uploadPath)) {
+                        Files.createDirectories(uploadPath);
                     }
+                    
+                    Path filePath = uploadPath.resolve(fileName);
+                    log.info("Attempting to save profile image to: {}", filePath.toAbsolutePath());
+                    Files.copy(image.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+                    user.setProfileImageUrl(gatewayUrl + "/uploads/" + fileName);
                 }
                 log.debug("Profile image updated for user ID: {}", userId);
             } catch (IOException e) {
-                log.error("Image upload failed for user ID {}: {}", userId, e.getMessage());
+                log.error("CRITICAL: Image upload failed. If S3 is disabled, check folder permissions (chmod 777 uploads). Error: {}", e.getMessage());
                 throw new com.authservice.exception.BadRequestException("File storage failed: " + e.getMessage());
             }
         }
