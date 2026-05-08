@@ -44,7 +44,7 @@ public class PostServiceImpl implements PostService {
 	@org.springframework.beans.factory.annotation.Autowired(required = false)
 	private com.amazonaws.services.s3.AmazonS3 s3Client;
 
-	@org.springframework.beans.factory.annotation.Value("${aws.s3.bucket:inkwell-bucket}")
+	@org.springframework.beans.factory.annotation.Value("${AWS_S3_BUCKET:inkwell-media-storage}")
 	private String bucketName;
 
 	private final PostRepository postRepository;
@@ -243,12 +243,16 @@ public class PostServiceImpl implements PostService {
 		String fileName = System.currentTimeMillis() + "_" + originalFilename.replaceAll("[^a-zA-Z0-9.-]", "_");
 
 		if (s3Client != null) {
-			com.amazonaws.services.s3.model.ObjectMetadata metadata = new com.amazonaws.services.s3.model.ObjectMetadata();
-			metadata.setContentLength(image.getSize());
-			metadata.setContentType(image.getContentType());
-			s3Client.putObject(new com.amazonaws.services.s3.model.PutObjectRequest(bucketName, "post_uploads/" + fileName, image.getInputStream(), metadata)
-				.withCannedAcl(com.amazonaws.services.s3.model.CannedAccessControlList.PublicRead));
-			return s3Client.getUrl(bucketName, "post_uploads/" + fileName).toString();
+			try {
+				com.amazonaws.services.s3.model.ObjectMetadata metadata = new com.amazonaws.services.s3.model.ObjectMetadata();
+				metadata.setContentLength(image.getSize());
+				metadata.setContentType(image.getContentType());
+				s3Client.putObject(new com.amazonaws.services.s3.model.PutObjectRequest(bucketName, "post_uploads/" + fileName, image.getInputStream(), metadata)
+					.withCannedAcl(com.amazonaws.services.s3.model.CannedAccessControlList.PublicRead));
+				return s3Client.getUrl(bucketName, "post_uploads/" + fileName).toString();
+			} catch (Exception e) {
+				log.warn("S3 upload failed, falling back to local storage: {}", e.getMessage());
+			}
 		}
 
 		Path uploadPath = Paths.get("post_uploads");

@@ -21,7 +21,13 @@ spring:
               - "http://localhost:5174"
               - "https://inkwell-blogging.netlify.app"
 
-            allowedMethods: "*"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+              - PATCH
             allowedHeaders: "*"
             allowCredentials: true
 
@@ -40,7 +46,7 @@ spring:
         - id: post-service
           uri: lb://POST-SERVICE
           predicates:
-            - Path=/posts/**
+            - Path=/posts/**,/post_uploads/**
 
         - id: post-service-uploads
           uri: lb://POST-SERVICE

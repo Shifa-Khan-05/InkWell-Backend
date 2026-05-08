@@ -61,6 +61,10 @@ services:
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
       - JWT_SECRET=${JWT_SECRET}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION:-ap-south-1}
+      - AWS_S3_BUCKET=${AWS_S3_BUCKET}
     deploy:
       resources:
         limits:
@@ -78,9 +82,13 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=prod
       - EUREKA_URL=http://eureka-server:8761/eureka/
-      - DB_URL=${DB_URL}
+      - DB_URL=${POST_DB_URL:-${DB_URL}}
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION:-ap-south-1}
+      - AWS_S3_BUCKET=${AWS_S3_BUCKET}
     deploy:
       resources:
         limits:
@@ -98,7 +106,7 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=prod
       - EUREKA_URL=http://eureka-server:8761/eureka/
-      - DB_URL=${DB_URL}
+      - DB_URL=${COMMENT_DB:-${DB_URL}}
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
     deploy:
@@ -118,7 +126,7 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=prod
       - EUREKA_URL=http://eureka-server:8761/eureka/
-      - DB_URL=${DB_URL}
+      - DB_URL=${MEDIA_DB:-${DB_URL}}
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
     deploy:
@@ -138,9 +146,11 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=prod
       - EUREKA_URL=http://eureka-server:8761/eureka/
-      - DB_URL=${DB_URL}
+      - DB_URL=${NEWSLETTER_DB_URL:-${DB_URL}}
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
+      - EMAIL_USER=${EMAIL_USER}
+      - EMAIL_PASS=${EMAIL_PASS}
     deploy:
       resources:
         limits:
@@ -159,11 +169,13 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=prod
       - EUREKA_URL=http://eureka-server:8761/eureka/
-      - DB_URL=${DB_URL}
+      - DB_URL=${NOTIFICATION_DB_URL:-${DB_URL}}
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
       - SPRING_RABBITMQ_HOST=rabbitmq
       - SPRING_RABBITMQ_PORT=5672
+      - EMAIL_USER=${EMAIL_USER}
+      - EMAIL_PASS=${EMAIL_PASS}
     deploy:
       resources:
         limits:
@@ -181,7 +193,7 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=prod
       - EUREKA_URL=http://eureka-server:8761/eureka/
-      - DB_URL=${DB_URL}
+      - DB_URL=${PAYMENT_DB_URL:-${DB_URL}}
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
     deploy:
@@ -201,7 +213,7 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=prod
       - EUREKA_URL=http://eureka-server:8761/eureka/
-      - DB_URL=${DB_URL}
+      - DB_URL=${TAXONOMY_DB:-${DB_URL}}
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
     deploy:

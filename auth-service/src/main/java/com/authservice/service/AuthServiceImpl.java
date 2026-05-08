@@ -167,7 +167,7 @@ public class AuthServiceImpl implements AuthService {
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private com.amazonaws.services.s3.AmazonS3 s3Client;
 
-    @org.springframework.beans.factory.annotation.Value("${aws.s3.bucket:inkwell-bucket}")
+    @org.springframework.beans.factory.annotation.Value("${AWS_S3_BUCKET:inkwell-media-storage}")
     private String bucketName;
 
     @Override
@@ -193,15 +193,23 @@ public class AuthServiceImpl implements AuthService {
             try {
                 String fileName = "user_" + userId + "_" + System.currentTimeMillis() + ".jpg";
                 
+                boolean s3Success = false;
                 if (s3Client != null) {
-                    // Upload to S3
-                    com.amazonaws.services.s3.model.ObjectMetadata metadata = new com.amazonaws.services.s3.model.ObjectMetadata();
-                    metadata.setContentLength(image.getSize());
-                    metadata.setContentType(image.getContentType());
-                    s3Client.putObject(new com.amazonaws.services.s3.model.PutObjectRequest(bucketName, "uploads/" + fileName, image.getInputStream(), metadata)
-                        .withCannedAcl(com.amazonaws.services.s3.model.CannedAccessControlList.PublicRead));
-                    user.setProfileImageUrl(s3Client.getUrl(bucketName, "uploads/" + fileName).toString());
-                } else {
+                    try {
+                        // Upload to S3
+                        com.amazonaws.services.s3.model.ObjectMetadata metadata = new com.amazonaws.services.s3.model.ObjectMetadata();
+                        metadata.setContentLength(image.getSize());
+                        metadata.setContentType(image.getContentType());
+                        s3Client.putObject(new com.amazonaws.services.s3.model.PutObjectRequest(bucketName, "uploads/" + fileName, image.getInputStream(), metadata)
+                            .withCannedAcl(com.amazonaws.services.s3.model.CannedAccessControlList.PublicRead));
+                        user.setProfileImageUrl(s3Client.getUrl(bucketName, "uploads/" + fileName).toString());
+                        s3Success = true;
+                    } catch (Exception s3Ex) {
+                        log.warn("S3 upload failed, falling back to local storage: {}", s3Ex.getMessage());
+                    }
+                }
+                
+                if (!s3Success) {
                     // Fallback to local storage
                     Path uploadPath = Paths.get("uploads");
                     if (!Files.exists(uploadPath)) {

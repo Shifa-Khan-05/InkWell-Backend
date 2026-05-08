@@ -21,6 +21,9 @@ public class NotificationServiceImpl {
 	private final JavaMailSender mailSender;
 	private final AuthClient authClient;
 
+	@org.springframework.beans.factory.annotation.Value("${EMAIL_USER:shifa.inkwell.official@gmail.com}")
+	private String emailUser;
+
 	// Create In-App Notification
 	public Notification createNotification(Integer recipientId, Integer actorId, String type, String msg,
 			Integer relatedId) {
@@ -111,7 +114,7 @@ public class NotificationServiceImpl {
 			helper.setSubject("InkWell | " + subject);
 			helper.setText(htmlContent, true);
 			// ✅ FIX: Gmail requires the 'From' address to match the authenticated user
-			helper.setFrom(System.getenv("EMAIL_USER") != null ? System.getenv("EMAIL_USER") : "shifa.inkwell.official@gmail.com");
+			helper.setFrom(emailUser);
 
 			mailSender.send(message);
 		} catch (Exception e) {
