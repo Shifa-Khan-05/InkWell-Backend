@@ -161,7 +161,11 @@ public class AuthResource {
 		user.setTokenExpiry(LocalDateTime.now().plusHours(1));
 		userRepository.save(user);
 
-		String resetLink = "http://localhost:5173/reset-password?token=" + token;
+		String frontendUrl = System.getenv("FRONTEND_URL");
+		if (frontendUrl == null || frontendUrl.isEmpty()) {
+			frontendUrl = "https://inkwell-blogging.netlify.app";
+		}
+		String resetLink = frontendUrl + "/reset-password?token=" + token;
 
 		Map<String, String> mailData = new HashMap<>();
 		mailData.put("recipientEmail", email);
