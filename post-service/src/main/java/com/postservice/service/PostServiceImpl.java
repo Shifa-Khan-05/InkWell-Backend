@@ -255,16 +255,20 @@ public class PostServiceImpl implements PostService {
 			}
 		}
 
-		Path uploadPath = Paths.get("post_uploads");
-		if (!Files.exists(uploadPath)) {
-			Files.createDirectories(uploadPath);
+		try {
+			Path uploadPath = Paths.get("post_uploads");
+			if (!Files.exists(uploadPath)) {
+				Files.createDirectories(uploadPath);
+			}
+
+			Path filePath = uploadPath.resolve(fileName);
+			log.info("Attempting to save file to absolute path: {}", filePath.toAbsolutePath());
+			Files.copy(image.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+			return gatewayUrl + "/post_uploads/" + fileName;
+		} catch (IOException e) {
+			log.error("CRITICAL: Failed to save post image to disk. Check folder permissions (chmod 777 post_uploads). Error: {}", e.getMessage());
+			throw new IOException("Server cannot write to storage: " + e.getMessage());
 		}
-
-		Path filePath = uploadPath.resolve(fileName);
-		log.debug("Saving file to: {}", filePath.toAbsolutePath());
-		Files.copy(image.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-
-		return gatewayUrl + "/post_uploads/" + fileName;
 	}
 
 	private String generateUniqueSlug(String title) {
