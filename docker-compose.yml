@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  eureka-server:
+  inkwell-eureka:
     image: ${DOCKER_USERNAME:-shifakhan2005}/inkwell-eureka-server:latest
     container_name: inkwell-eureka
     ports:
@@ -14,6 +14,12 @@ services:
       resources:
         limits:
           memory: 350M
+
+  inkwell-redis:
+    image: redis:alpine
+    container_name: inkwell-redis
+    networks:
+      - inkwell-network
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -34,12 +40,12 @@ services:
     ports:
       - "8081:8081"
     depends_on:
-      - eureka-server
+      - inkwell-eureka
     networks:
       - inkwell-network
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - EUREKA_URL=http://eureka-server:8761/eureka/
+      - EUREKA_URL=http://inkwell-eureka:8761/eureka/
     deploy:
       resources:
         limits:
@@ -51,24 +57,30 @@ services:
     ports:
       - "8084:8084"
     depends_on:
-      - eureka-server
+      - inkwell-eureka
     networks:
       - inkwell-network
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - EUREKA_URL=http://eureka-server:8761/eureka/
+      - EUREKA_URL=http://inkwell-eureka:8761/eureka/
       - DB_URL=${DB_URL}
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
       - JWT_SECRET=${JWT_SECRET}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GATEWAY_URL=${GATEWAY_URL:-https://3.108.190.193.nip.io}
+      - FRONTEND_URL=${FRONTEND_URL:-https://inkwell-blogging.netlify.app}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-      - AWS_REGION=${AWS_REGION:-ap-south-1}
       - AWS_S3_BUCKET=${AWS_S3_BUCKET}
+      - AWS_REGION=${AWS_REGION}
     deploy:
       resources:
         limits:
           memory: 300M
+    volumes:
+      - ./uploads:/uploads
 
   post-service:
     image: ${DOCKER_USERNAME:-shifakhan2005}/inkwell-post-service:latest
@@ -76,23 +88,29 @@ services:
     ports:
       - "8082:8082"
     depends_on:
-      - eureka-server
+      - inkwell-eureka
     networks:
       - inkwell-network
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - EUREKA_URL=http://eureka-server:8761/eureka/
-      - DB_URL=${POST_DB_URL:-${DB_URL}}
+      - EUREKA_URL=http://inkwell-eureka:8761/eureka/
+      - DB_URL=${POST_DB_URL}
+      - SPRING_REDIS_HOST=inkwell-redis
+      - SPRING_RABBITMQ_HOST=rabbitmq
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
+      - GATEWAY_URL=${GATEWAY_URL:-https://3.108.190.193.nip.io}
+      - FRONTEND_URL=${FRONTEND_URL:-https://inkwell-blogging.netlify.app}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-      - AWS_REGION=${AWS_REGION:-ap-south-1}
       - AWS_S3_BUCKET=${AWS_S3_BUCKET}
+      - AWS_REGION=${AWS_REGION}
     deploy:
       resources:
         limits:
           memory: 300M
+    volumes:
+      - ./post_uploads:/post_uploads
 
   comment-service:
     image: ${DOCKER_USERNAME:-shifakhan2005}/inkwell-comment-service:latest
@@ -100,15 +118,16 @@ services:
     ports:
       - "8083:8083"
     depends_on:
-      - eureka-server
+      - inkwell-eureka
     networks:
       - inkwell-network
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - EUREKA_URL=http://eureka-server:8761/eureka/
-      - DB_URL=${COMMENT_DB:-${DB_URL}}
+      - EUREKA_URL=http://inkwell-eureka:8761/eureka/
+      - DB_URL=${COMMENT_DB}
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
+      - GATEWAY_URL=https://3.108.190.193.nip.io
     deploy:
       resources:
         limits:
@@ -120,15 +139,16 @@ services:
     ports:
       - "8087:8087"
     depends_on:
-      - eureka-server
+      - inkwell-eureka
     networks:
       - inkwell-network
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - EUREKA_URL=http://eureka-server:8761/eureka/
-      - DB_URL=${MEDIA_DB:-${DB_URL}}
+      - EUREKA_URL=http://inkwell-eureka:8761/eureka/
+      - DB_URL=${MEDIA_DB}
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
+      - GATEWAY_URL=https://3.108.190.193.nip.io
     deploy:
       resources:
         limits:
@@ -140,15 +160,17 @@ services:
     ports:
       - "8086:8086"
     depends_on:
-      - eureka-server
+      - inkwell-eureka
     networks:
       - inkwell-network
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - EUREKA_URL=http://eureka-server:8761/eureka/
-      - DB_URL=${NEWSLETTER_DB_URL:-${DB_URL}}
+      - EUREKA_URL=http://inkwell-eureka:8761/eureka/
+      - DB_URL=${NEWSLETTER_DB_URL}
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
+      - GATEWAY_URL=${GATEWAY_URL:-https://3.108.190.193.nip.io}
+      - FRONTEND_URL=${FRONTEND_URL:-https://inkwell-blogging.netlify.app}
       - EMAIL_USER=${EMAIL_USER}
       - EMAIL_PASS=${EMAIL_PASS}
     deploy:
@@ -162,20 +184,21 @@ services:
     ports:
       - "8090:8090"
     depends_on:
-      - eureka-server
+      - inkwell-eureka
       - rabbitmq
     networks:
       - inkwell-network
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - EUREKA_URL=http://eureka-server:8761/eureka/
-      - DB_URL=${NOTIFICATION_DB_URL:-${DB_URL}}
+      - EUREKA_URL=http://inkwell-eureka:8761/eureka/
+      - DB_URL=${NOTIFICATION_DB_URL}
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
-      - SPRING_RABBITMQ_HOST=rabbitmq
-      - SPRING_RABBITMQ_PORT=5672
       - EMAIL_USER=${EMAIL_USER}
       - EMAIL_PASS=${EMAIL_PASS}
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_RABBITMQ_PORT=5672
+      - GATEWAY_URL=https://3.108.190.193.nip.io
     deploy:
       resources:
         limits:
@@ -187,15 +210,18 @@ services:
     ports:
       - "8089:8089"
     depends_on:
-      - eureka-server
+      - inkwell-eureka
     networks:
       - inkwell-network
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - EUREKA_URL=http://eureka-server:8761/eureka/
-      - DB_URL=${PAYMENT_DB_URL:-${DB_URL}}
+      - EUREKA_URL=http://inkwell-eureka:8761/eureka/
+      - DB_URL=${PAYMENT_DB_URL}
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
+      - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID}
+      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET}
+      - GATEWAY_URL=https://3.108.190.193.nip.io
     deploy:
       resources:
         limits:
@@ -207,15 +233,16 @@ services:
     ports:
       - "8085:8085"
     depends_on:
-      - eureka-server
+      - inkwell-eureka
     networks:
       - inkwell-network
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - EUREKA_URL=http://eureka-server:8761/eureka/
-      - DB_URL=${TAXONOMY_DB:-${DB_URL}}
+      - EUREKA_URL=http://inkwell-eureka:8761/eureka/
+      - DB_URL=${DB_URL}
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
+      - GATEWAY_URL=https://3.108.190.193.nip.io
     deploy:
       resources:
         limits:
@@ -227,15 +254,16 @@ services:
     ports:
       - "9001:9001"
     depends_on:
-      - eureka-server
+      - inkwell-eureka
     networks:
       - inkwell-network
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - EUREKA_URL=http://eureka-server:8761/eureka/
+      - EUREKA_URL=http://inkwell-eureka:8761/eureka/
       - DB_URL=${DB_URL}
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
+      - GATEWAY_URL=https://3.108.190.193.nip.io
     deploy:
       resources:
         limits:
@@ -247,15 +275,16 @@ services:
     ports:
       - "9090:9090"
     depends_on:
-      - eureka-server
+      - inkwell-eureka
     networks:
       - inkwell-network
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - EUREKA_URL=http://eureka-server:8761/eureka/
+      - EUREKA_URL=http://inkwell-eureka:8761/eureka/
       - DB_URL=${DB_URL}
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
+      - GATEWAY_URL=https://3.108.190.193.nip.io
     deploy:
       resources:
         limits:

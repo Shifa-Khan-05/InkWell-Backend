@@ -8,8 +8,8 @@ spring:
         name: comment-service
     datasource:
         url: ${COMMENT_DB}
-        username: ${DB_USER}
-        password: ${DB_PASS}
+        username: ${DB_USERNAME}
+        password: ${DB_PASSWORD}
         driver-class-name: com.mysql.cj.jdbc.Driver
         hikari:
             maximum-pool-size: 3

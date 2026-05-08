@@ -20,6 +20,12 @@ public class NewsletterServiceImpl implements NewsletterService {
 	private final SubscriberRepository repository;
 	private final JavaMailSender mailSender;
 
+	@org.springframework.beans.factory.annotation.Value("${gateway.url:https://3.108.190.193.nip.io}")
+	private String gatewayUrl;
+
+	@org.springframework.beans.factory.annotation.Value("${FRONTEND_URL:https://inkwell-blogging.netlify.app}")
+	private String frontendUrl;
+
 	@Override
 	public void subscribe(String email) {
 		// Only proceed if email isn't already in the system
@@ -33,7 +39,7 @@ public class NewsletterServiceImpl implements NewsletterService {
 			repository.save(subscriber);
 
 			// Send Confirmation Link (Double Opt-In)
-			String confirmLink = "http://localhost:8081/newsletter/confirm?token=" + token;
+			String confirmLink = gatewayUrl + "/newsletter/confirm?token=" + token;
 			sendEmail(email, "Confirm your InkWell Subscription",
 					"Welcome to InkWell! To start receiving our narratives, please confirm your subscription by clicking here: "
 							+ confirmLink);
@@ -134,7 +140,7 @@ public class NewsletterServiceImpl implements NewsletterService {
 	        subject, 
 	        title, 
 	        body, 
-	        "http://localhost:5173/dashboard" // Default action link
+	        frontendUrl + "/dashboard" // Default action link
 	    );
 	    System.out.println("Direct dispatch completed for: " + email);
 	}

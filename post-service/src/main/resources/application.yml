@@ -20,8 +20,8 @@ spring:
 
   datasource:
     url: ${POST_DB_URL}
-    username: ${DB_USER}
-    password: ${DB_PASS}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     hikari:
       maximum-pool-size: 3
       minimum-idle: 1

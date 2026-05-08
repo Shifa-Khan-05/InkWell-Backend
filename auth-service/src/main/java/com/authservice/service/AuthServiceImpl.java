@@ -28,6 +28,9 @@ public class AuthServiceImpl implements AuthService {
     @org.springframework.beans.factory.annotation.Value("${gateway.url:https://3.108.190.193.nip.io}")
     private String gatewayUrl;
 
+    @org.springframework.beans.factory.annotation.Value("${FRONTEND_URL:https://inkwell-blogging.netlify.app}")
+    private String frontendUrl;
+
     private final UserRepository userRepository;
     private final RoleRequestRepository roleRequestRepository;
     private final EmailOtpRepository emailOtpRepository;
@@ -60,7 +63,7 @@ public class AuthServiceImpl implements AuthService {
         mailData.put("subject", "Email Verification OTP");
         mailData.put("title", "Verify Your Email");
         mailData.put("body", "Your OTP for InkWell registration is: " + otp + ". It expires in 10 minutes.");
-        mailData.put("actionUrl", "http://localhost:5173/register"); // Default action link
+        mailData.put("actionUrl", frontendUrl + "/register"); // Default action link
         notificationClient.sendStyledEmail(mailData);
     }
 
@@ -110,7 +113,7 @@ public class AuthServiceImpl implements AuthService {
         welcomeMailData.put("subject", "Welcome to InkWell!");
         welcomeMailData.put("title", "Welcome Aboard!");
         welcomeMailData.put("body", "Thank you for registering on InkWell. We're excited to have you in our community.");
-        welcomeMailData.put("actionUrl", "http://localhost:5173/login");
+        welcomeMailData.put("actionUrl", frontendUrl + "/login");
         notificationClient.sendStyledEmail(welcomeMailData);
 
         log.info("User registered successfully: {} with ID: {}", savedUser.getEmail(), savedUser.getUserId());

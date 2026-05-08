@@ -56,9 +56,9 @@ public class AdminController {
 			summary.put("platformStatus", "OPERATIONAL");
 
 		} catch (Exception e) {
-			log.error("Protocol Error: Admin summary aggregation failed: {}", e.getMessage());
+			log.error("Protocol Error: Admin summary aggregation failed: {}", e.getMessage(), e);
 			summary.put("platformStatus", "DEGRADED");
-			summary.put("error", "One or more core services are currently unreachable.");
+			summary.put("error", "Core Services Unreachable: " + e.getMessage());
 
 			// Return empty structures so the frontend doesn't crash
 			summary.put("users", Collections.emptyList());

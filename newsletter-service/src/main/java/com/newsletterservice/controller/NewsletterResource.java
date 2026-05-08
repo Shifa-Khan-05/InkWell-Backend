@@ -19,6 +19,9 @@ public class NewsletterResource {
 	private final NewsletterService newsletterService;
 	private final SubscriberRepository subscriberRepository;
 
+	@org.springframework.beans.factory.annotation.Value("${FRONTEND_URL:https://inkwell-blogging.netlify.app}")
+	private String frontendUrl;
+
 	@PostMapping("/subscribe")
 	public ResponseEntity<?> subscribe(@RequestBody Map<String, String> request) {
 		String email = request.get("email");
@@ -65,7 +68,7 @@ public class NewsletterResource {
 					        </div>
 					        <h1 class="text-3xl font-black text-white italic uppercase tracking-tighter mb-4">Identity Verified</h1>
 					        <p class="text-gray-400 font-medium mb-10">Subscription Activated! Welcome to the InkWell Inner Circle. Your narrative journey begins now.</p>
-					        <a href="http://localhost:5173/dashboard"
+					        <a href="%s/dashboard"
 					           class="inline-block w-full bg-white text-black font-black uppercase italic py-5 rounded-2xl hover:bg-green-500 hover:text-white transition-all duration-300 shadow-xl">
 					            Enter Dashboard
 					        </a>
@@ -73,7 +76,7 @@ public class NewsletterResource {
 					</body>
 					</html>
 					""";
-			return ResponseEntity.ok().header("Content-Type", "text/html").body(successHtml);
+			return ResponseEntity.ok().header("Content-Type", "text/html").body(successHtml.formatted(frontendUrl));
 		}
 
 		return ResponseEntity.status(400).header("Content-Type", "text/html")
@@ -106,7 +109,7 @@ public class NewsletterResource {
 					        </div>
 					        <h1 class="text-3xl font-black text-white italic uppercase tracking-tighter mb-4">Connections Severed</h1>
 					        <p class="text-gray-400 font-medium mb-10">You have been successfully removed from our manuscript dispatches. We hope our paths cross again.</p>
-					        <a href="http://localhost:5173/browse"
+					        <a href="%s/browse"
 					           class="inline-block w-full border border-gray-700 text-gray-400 font-bold uppercase py-4 rounded-2xl hover:bg-gray-800 hover:text-white transition-all duration-300">
 					            Return to Feed
 					        </a>
@@ -114,7 +117,7 @@ public class NewsletterResource {
 					</body>
 					</html>
 					""";
-			return ResponseEntity.ok().header("Content-Type", "text/html").body(unsubscribeHtml);
+			return ResponseEntity.ok().header("Content-Type", "text/html").body(unsubscribeHtml.formatted(frontendUrl));
 		}
 
 		return ResponseEntity.status(404).header("Content-Type", "text/html")
@@ -128,11 +131,11 @@ public class NewsletterResource {
 				    <div style="text-align:center; border:1px solid #333; padding:60px; border-radius:40px; max-width:400px;">
 				        <h2 style="color:#ef4444; font-weight:900; letter-spacing:-1px; text-transform:uppercase;">%s</h2>
 				        <p style="color:#666; margin-bottom:30px;">%s</p>
-				        <a href="http://localhost:5173/login" style="color:#fff; text-decoration:none; font-weight:bold; border-bottom:1px solid #fff; padding-bottom:2px;">Back to InkWell</a>
+				        <a href="%s/login" style="color:#fff; text-decoration:none; font-weight:bold; border-bottom:1px solid #fff; padding-bottom:2px;">Back to InkWell</a>
 				    </div>
 				</body>
 				"""
-				.formatted(title, message);
+				.formatted(title, message, frontendUrl);
 	}
 
 	@PostMapping("/direct-mail")
