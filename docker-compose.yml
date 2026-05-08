@@ -75,6 +75,7 @@ services:
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - AWS_S3_BUCKET=${AWS_S3_BUCKET}
       - AWS_REGION=${AWS_REGION}
+
     deploy:
       resources:
         limits:
@@ -99,8 +100,7 @@ services:
       - SPRING_RABBITMQ_HOST=rabbitmq
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
-      - GATEWAY_URL=${GATEWAY_URL:-https://3.108.190.193.nip.io}
-      - FRONTEND_URL=${FRONTEND_URL:-https://inkwell-blogging.netlify.app}
+      - GATEWAY_URL=https://3.108.190.193.nip.io
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - AWS_S3_BUCKET=${AWS_S3_BUCKET}
@@ -124,10 +124,18 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=prod
       - EUREKA_URL=http://inkwell-eureka:8761/eureka/
-      - DB_URL=${COMMENT_DB}
+      - DB_URL=${POST_DB_URL}
+      - SPRING_REDIS_HOST=inkwell-redis
+      - SPRING_RABBITMQ_HOST=rabbitmq
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
-      - GATEWAY_URL=https://3.108.190.193.nip.io
+      - GATEWAY_URL=${GATEWAY_URL:-https://3.108.190.193.nip.io}
+      - FRONTEND_URL=${FRONTEND_URL:-https://inkwell-blogging.netlify.app}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_S3_BUCKET=${AWS_S3_BUCKET}
+      - AWS_REGION=${AWS_REGION}
+
     deploy:
       resources:
         limits:
@@ -173,6 +181,7 @@ services:
       - FRONTEND_URL=${FRONTEND_URL:-https://inkwell-blogging.netlify.app}
       - EMAIL_USER=${EMAIL_USER}
       - EMAIL_PASS=${EMAIL_PASS}
+
     deploy:
       resources:
         limits:
