@@ -90,35 +90,53 @@ public class PostServiceImpl implements PostService {
 	@Transactional
 	@CacheEvict(value = "publishedPosts", allEntries = true)
 	public PostResponseDTO createPostWithImage(PostCreationDTO dto, MultipartFile image) throws IOException {
-		log.info("Creating new post: {} for author: {}", dto.getTitle(), dto.getAuthorId());
+		log.info("DIAGNOSTIC: Step 1 - Initiated creation for title: {}", dto.getTitle());
 		Post post = new Post();
 		post.setTitle(dto.getTitle());
 		post.setContent(dto.getContent());
 		post.setAuthorId(dto.getAuthorId());
 		post.setCategoryId(dto.getCategoryId());
 		post.setStatus(dto.getStatus() != null ? dto.getStatus() : "DRAFT");
+		log.info("DIAGNOSTIC: Step 2 - Post object populated. Status: {}", post.getStatus());
 
 		if (image != null && !image.isEmpty()) {
-			log.debug("Saving featured image for post: {}", dto.getTitle());
-			post.setFeaturedImageUrl(saveImageToDisk(image));
+			log.info("DIAGNOSTIC: Step 3 - Image detected. Size: {} bytes. Starting upload.", image.getSize());
+			try {
+				String imageUrl = saveImageToDisk(image);
+				post.setFeaturedImageUrl(imageUrl);
+				log.info("DIAGNOSTIC: Step 4 - Image saved successfully. URL: {}", imageUrl);
+			} catch (Exception e) {
+				log.error("DIAGNOSTIC FAILURE: Step 4 - Image storage failed: {}", e.getMessage());
+				throw e;
+			}
+		} else {
+			log.info("DIAGNOSTIC: Step 3 - No image provided.");
 		}
 
+		log.info("DIAGNOSTIC: Step 5 - Generating slug and excerpt.");
 		post.setSlug(generateUniqueSlug(dto.getTitle()));
 		post.setExcerpt(generateExcerpt(dto));
 		post.setReadTimeMin(calculateReadTime(dto.getContent()));
 		post.setCreatedAt(LocalDateTime.now());
 		post.setUpdatedAt(LocalDateTime.now());
+		log.info("DIAGNOSTIC: Step 6 - Metadata generated. Slug: {}", post.getSlug());
 
-		Post savedPost = postRepository.save(post);
-		log.info("Post saved successfully with ID: {} and Slug: {}", savedPost.getPostId(), savedPost.getSlug());
+		try {
+			log.info("DIAGNOSTIC: Step 7 - Attempting database save.");
+			Post savedPost = postRepository.save(post);
+			log.info("DIAGNOSTIC: Step 8 - Database save successful. ID: {}", savedPost.getPostId());
 
-		if ("PUBLISHED".equalsIgnoreCase(savedPost.getStatus())) {
-			log.debug("Post published, triggering sync and notifications.");
-			triggerTaxonomySync(savedPost);
-			sendRabbitMessage(savedPost, "NEW_POST");
+			if ("PUBLISHED".equalsIgnoreCase(savedPost.getStatus())) {
+				log.info("DIAGNOSTIC: Step 9 - Triggering sync and notifications.");
+				triggerTaxonomySync(savedPost);
+				sendRabbitMessage(savedPost, "NEW_POST");
+			}
+
+			return enrichWithAuthor(savedPost);
+		} catch (Exception e) {
+			log.error("DIAGNOSTIC FAILURE: Step 7/8 - Database save failed: {}", e.getMessage(), e);
+			throw e;
 		}
-
-		return enrichWithAuthor(savedPost);
 	}
 
 	@Override

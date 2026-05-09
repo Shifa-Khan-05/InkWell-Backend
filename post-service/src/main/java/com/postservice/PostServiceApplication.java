@@ -10,6 +10,7 @@ import org.springframework.cloud.openfeign.EnableFeignClients; // ✅ Import thi
 @EnableDiscoveryClient
 @EnableFeignClients 
 @EnableCaching
+@org.springframework.data.jpa.repository.config.EnableJpaRepositories(basePackages = "com.postservice.repository")
 public class PostServiceApplication {
     public static void main(String[] args) {
         SpringApplication.run(PostServiceApplication.class, args);

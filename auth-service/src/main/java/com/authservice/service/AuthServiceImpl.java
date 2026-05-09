@@ -276,20 +276,29 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void requestRoleChange(int userId, String requestedRole) {
+        log.info("Processing role change request for user ID: {} to {}", userId, requestedRole);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new com.authservice.exception.ResourceNotFoundException(USER_NOT_FOUND));
         
+        // Ensure role format is correct (e.g., AUTHOR -> ROLE_AUTHOR)
+        String targetRole = requestedRole.toUpperCase();
+        if (!targetRole.startsWith("ROLE_")) {
+            targetRole = "ROLE_" + targetRole;
+        }
+
         if (roleRequestRepository.existsByUserUserIdAndStatus(userId, "PENDING")) {
+            log.warn("User {} already has a pending request", userId);
             throw new com.authservice.exception.BadRequestException("A request is already pending.");
         }
 
         RoleRequest request = RoleRequest.builder()
                 .user(user)
-                .requestedRole(requestedRole)
+                .requestedRole(targetRole)
                 .status("PENDING")
                 .requestedAt(LocalDateTime.now())
                 .build();
         roleRequestRepository.save(request);
+        log.info("Role request for user {} saved successfully", userId);
     }
 
     @Override

@@ -12,13 +12,12 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
+        return http
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/admin/**").permitAll() // Permit admin summary calls
                 .anyRequest().permitAll()
-            );
-        return http.build();
+            )
+            .build();
     }
 }

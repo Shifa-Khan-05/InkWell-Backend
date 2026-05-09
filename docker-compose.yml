@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   inkwell-eureka:
     image: ${DOCKER_USERNAME:-shifakhan2005}/inkwell-eureka-server:latest
@@ -69,13 +67,12 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-      - GATEWAY_URL=${GATEWAY_URL:-https://3.108.190.193.nip.io}
+      - GATEWAY_URL=${GATEWAY_URL}
       - FRONTEND_URL=${FRONTEND_URL:-https://inkwell-blogging.netlify.app}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - AWS_S3_BUCKET=${AWS_S3_BUCKET}
       - AWS_REGION=${AWS_REGION}
-
     deploy:
       resources:
         limits:
@@ -100,7 +97,7 @@ services:
       - SPRING_RABBITMQ_HOST=rabbitmq
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
-      - GATEWAY_URL=https://3.108.190.193.nip.io
+      - GATEWAY_URL=${GATEWAY_URL}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - AWS_S3_BUCKET=${AWS_S3_BUCKET}
@@ -112,7 +109,6 @@ services:
           memory: 300M
     volumes:
       - ./post_uploads:/app/post_uploads
-
 
   comment-service:
     image: ${DOCKER_USERNAME:-shifakhan2005}/inkwell-comment-service:latest
@@ -131,13 +127,12 @@ services:
       - SPRING_RABBITMQ_HOST=rabbitmq
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
-      - GATEWAY_URL=${GATEWAY_URL:-https://3.108.190.193.nip.io}
+      - GATEWAY_URL=${GATEWAY_URL}
       - FRONTEND_URL=${FRONTEND_URL:-https://inkwell-blogging.netlify.app}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - AWS_S3_BUCKET=${AWS_S3_BUCKET}
       - AWS_REGION=${AWS_REGION}
-
     deploy:
       resources:
         limits:
@@ -158,7 +153,11 @@ services:
       - DB_URL=${MEDIA_DB}
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
-      - GATEWAY_URL=https://3.108.190.193.nip.io
+      - GATEWAY_URL=${GATEWAY_URL}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_S3_BUCKET=${AWS_S3_BUCKET}
+      - AWS_REGION=${AWS_REGION}
     deploy:
       resources:
         limits:
@@ -179,11 +178,10 @@ services:
       - DB_URL=${NEWSLETTER_DB_URL}
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
-      - GATEWAY_URL=${GATEWAY_URL:-https://3.108.190.193.nip.io}
+      - GATEWAY_URL=${GATEWAY_URL}
       - FRONTEND_URL=${FRONTEND_URL:-https://inkwell-blogging.netlify.app}
       - EMAIL_USER=${EMAIL_USER}
       - EMAIL_PASS=${EMAIL_PASS}
-
     deploy:
       resources:
         limits:
@@ -209,7 +207,7 @@ services:
       - EMAIL_PASS=${EMAIL_PASS}
       - SPRING_RABBITMQ_HOST=rabbitmq
       - SPRING_RABBITMQ_PORT=5672
-      - GATEWAY_URL=${GATEWAY_URL:-https://3.108.190.193.nip.io}
+      - GATEWAY_URL=${GATEWAY_URL}
     deploy:
       resources:
         limits:
@@ -232,7 +230,7 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID}
       - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET}
-      - GATEWAY_URL=https://3.108.190.193.nip.io
+      - GATEWAY_URL=${GATEWAY_URL}
     deploy:
       resources:
         limits:
@@ -250,10 +248,10 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=prod
       - EUREKA_URL=http://inkwell-eureka:8761/eureka/
-      - DB_URL=${DB_URL}
+      - DB_URL=${TAXONOMY_DB}
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
-      - GATEWAY_URL=https://3.108.190.193.nip.io
+      - GATEWAY_URL=${GATEWAY_URL}
     deploy:
       resources:
         limits:
@@ -274,7 +272,7 @@ services:
       - DB_URL=${DB_URL}
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
-      - GATEWAY_URL=https://3.108.190.193.nip.io
+      - GATEWAY_URL=${GATEWAY_URL}
     deploy:
       resources:
         limits:
@@ -295,7 +293,7 @@ services:
       - DB_URL=${DB_URL}
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
-      - GATEWAY_URL=https://3.108.190.193.nip.io
+      - GATEWAY_URL=${GATEWAY_URL}
     deploy:
       resources:
         limits:
