@@ -20,44 +20,15 @@ public class PostResource {
 
 	private final PostService postService;
 
-	// ✅ FIXED: Only ONE /create method exists now to avoid Ambiguous Mapping error
 	@PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-	public ResponseEntity<PostResponseDTO> createPost(@RequestParam("title") String title,
-			@RequestParam("content") String content, @RequestParam(value = "excerpt", required = false) String excerpt,
-			@RequestParam("authorId") int authorId,
-			@RequestParam(value = "status", defaultValue = "DRAFT") String status,
-			@RequestParam(value = "categoryId", required = false) Integer categoryId,
-			@RequestParam(value = "tagIds", required = false) List<Integer> tagIds,
+	public ResponseEntity<PostResponseDTO> createPost(@ModelAttribute PostCreationDTO dto,
 			@RequestParam(value = "image", required = false) MultipartFile image) throws IOException {
-
-		PostCreationDTO dto = new PostCreationDTO();
-		dto.setTitle(title);
-		dto.setContent(content);
-		dto.setExcerpt(excerpt);
-		dto.setAuthorId(authorId);
-		dto.setStatus(status);
-		dto.setCategoryId(categoryId);
-		dto.setTagIds(tagIds);
-
 		return new ResponseEntity<>(postService.createPostWithImage(dto, image), HttpStatus.CREATED);
 	}
 
 	@PutMapping(value = "/update/{postId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-	public ResponseEntity<PostResponseDTO> updatePost(@PathVariable int postId, @RequestParam("title") String title,
-			@RequestParam("content") String content, @RequestParam(value = "excerpt", required = false) String excerpt,
-			@RequestParam("status") String status,
-			@RequestParam(value = "categoryId", required = false) Integer categoryId,
-			@RequestParam(value = "tagIds", required = false) List<Integer> tagIds,
+	public ResponseEntity<PostResponseDTO> updatePost(@PathVariable int postId, @ModelAttribute PostCreationDTO postDto,
 			@RequestParam(value = "image", required = false) MultipartFile image) throws IOException {
-
-		PostCreationDTO postDto = new PostCreationDTO();
-		postDto.setTitle(title);
-		postDto.setContent(content);
-		postDto.setExcerpt(excerpt);
-		postDto.setStatus(status);
-		postDto.setCategoryId(categoryId);
-		postDto.setTagIds(tagIds);
-
 		return ResponseEntity.ok(postService.updatePost(postId, postDto, image));
 	}
 

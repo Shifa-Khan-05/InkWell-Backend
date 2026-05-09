@@ -93,14 +93,10 @@ public class AuthResource {
 
 	@PutMapping(value = "/profile/{userId}/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<UserResponseDTO> updateProfileWithImage(@PathVariable int userId,
-			@RequestParam(value = "fullName", required = false) String fullName,
-			@RequestParam(value = "username", required = false) String username,
-			@RequestParam(value = "bio", required = false) String bio,
-			@RequestParam(value = "age", required = false) Integer age,
-			@RequestParam(value = "password", required = false) String password,
+			@ModelAttribute com.authservice.dto.UserProfileUpdateDTO dto,
 			@RequestParam(value = "image", required = false) MultipartFile image) {
-		return ResponseEntity
-				.ok(authService.updateProfileWithFile(userId, fullName, username, bio, age, password, image));
+		return ResponseEntity.ok(authService.updateProfileWithFile(userId, dto.getFullName(), dto.getUsername(), 
+				dto.getBio(), dto.getAge(), dto.getPassword(), image));
 	}
 
 	@GetMapping("/users")
