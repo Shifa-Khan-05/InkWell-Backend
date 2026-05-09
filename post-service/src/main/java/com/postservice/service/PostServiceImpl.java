@@ -314,34 +314,47 @@ public class PostServiceImpl implements PostService {
 		return finalSlug;
 	}
 
+	private PostResponseDTO enrichWithAuthor(Post post) {
+		log.info("DIAGNOSTIC: Step 10 - Enriching post ID {} with author info", post.getPostId());
 		PostResponseDTO dto = new PostResponseDTO();
+		
+		// 1. Manual Mapping Fallback (In case ModelMapper is the one crashing)
 		try {
 			dto = modelMapper.map(post, PostResponseDTO.class);
 		} catch (Exception e) {
-			log.error("Mapping failure for post ID {}: {}", post.getPostId(), e.getMessage());
-			// Manual fallback if mapping fails
+			log.error("ModelMapper failed for post {}: {}", post.getPostId(), e.getMessage());
 			dto.setPostId(post.getPostId());
 			dto.setTitle(post.getTitle());
 			dto.setSlug(post.getSlug());
 			dto.setContent(post.getContent());
 			dto.setAuthorId(post.getAuthorId());
 			dto.setFeaturedImageUrl(post.getFeaturedImageUrl());
+			dto.setStatus(post.getStatus());
 		}
 
-		if (dto.getFeaturedImageUrl() != null && (dto.getFeaturedImageUrl().startsWith("http://localhost:8080/") || dto.getFeaturedImageUrl().startsWith("http://localhost:8081/"))) {
-			dto.setFeaturedImageUrl(dto.getFeaturedImageUrl().replace("http://localhost:8080/", gatewayUrl + "/").replace("http://localhost:8081/", gatewayUrl + "/"));
+		// 2. Gateway URL Normalization
+		if (dto.getFeaturedImageUrl() != null && (dto.getFeaturedImageUrl().contains("localhost"))) {
+			dto.setFeaturedImageUrl(dto.getFeaturedImageUrl()
+					.replace("http://localhost:8080/", gatewayUrl + "/")
+					.replace("http://localhost:8081/", gatewayUrl + "/"));
 		}
 		
+		// 3. Fail-Safe Author Lookup
 		try {
-			log.debug("Fetching author info for ID: {}", post.getAuthorId());
+			log.info("DIAGNOSTIC: Step 11 - Calling Auth-Service for ID: {}", post.getAuthorId());
 			UserResponseDTO author = authClient.getUserById(post.getAuthorId());
 			if (author != null) {
 				dto.setFullName(author.getFullName());
+				log.info("DIAGNOSTIC: Step 12 - Author found: {}", author.getFullName());
+			} else {
+				dto.setFullName("Anonymous Author");
 			}
 		} catch (Exception e) {
-			log.warn("Author lookup failed for ID {}: {}.", post.getAuthorId(), e.getMessage());
-			dto.setFullName("InkWell Author");
+			log.warn("DIAGNOSTIC WARNING: Auth-Service lookup failed for user {}. Reason: {}. Using placeholder.", 
+					post.getAuthorId(), e.getMessage());
+			dto.setFullName("InkWell Author"); // Prevents 500 error!
 		}
+		
 		return dto;
 	}
 
