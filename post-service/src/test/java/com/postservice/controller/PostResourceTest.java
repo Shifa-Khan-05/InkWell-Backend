@@ -45,23 +45,24 @@ class PostResourceTest {
     @Test
     void createPost_Success() throws IOException {
         when(postService.createPostWithImage(any(PostCreationDTO.class), eq(mockFile))).thenReturn(postResponseDTO);
+        PostCreationDTO dto = new PostCreationDTO();
+        dto.setTitle("Test Title");
+        dto.setContent("Content");
+        dto.setAuthorId(1);
 
-        ResponseEntity<PostResponseDTO> response = postResource.createPost(
-                "Test Title", "Content", "Excerpt", 1, "PUBLISHED", 1, List.of(1, 2), mockFile
-        );
+        ResponseEntity<PostResponseDTO> response = postResource.createPost(dto, mockFile);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(response.getBody()).isEqualTo(postResponseDTO);
-        verify(postService).createPostWithImage(any(PostCreationDTO.class), eq(mockFile));
     }
 
     @Test
     void createPost_WithNullOptionals_Success() throws IOException {
         when(postService.createPostWithImage(any(PostCreationDTO.class), isNull())).thenReturn(postResponseDTO);
+        PostCreationDTO dto = new PostCreationDTO();
+        dto.setTitle("Test Title");
 
-        ResponseEntity<PostResponseDTO> response = postResource.createPost(
-                "Test Title", "Content", null, 1, "DRAFT", null, null, null
-        );
+        ResponseEntity<PostResponseDTO> response = postResource.createPost(dto, null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(response.getBody()).isEqualTo(postResponseDTO);
@@ -70,10 +71,10 @@ class PostResourceTest {
     @Test
     void updatePost_Success() throws IOException {
         when(postService.updatePost(eq(1), any(PostCreationDTO.class), eq(mockFile))).thenReturn(postResponseDTO);
+        PostCreationDTO dto = new PostCreationDTO();
+        dto.setTitle("Updated Title");
 
-        ResponseEntity<PostResponseDTO> response = postResource.updatePost(
-                1, "Updated Title", "Updated Content", "Excerpt", "PUBLISHED", 1, List.of(1, 2), mockFile
-        );
+        ResponseEntity<PostResponseDTO> response = postResource.updatePost(1, dto, mockFile);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo(postResponseDTO);
@@ -82,10 +83,10 @@ class PostResourceTest {
     @Test
     void updatePost_WithNullOptionals_Success() throws IOException {
         when(postService.updatePost(eq(1), any(PostCreationDTO.class), isNull())).thenReturn(postResponseDTO);
+        PostCreationDTO dto = new PostCreationDTO();
+        dto.setTitle("Updated Title");
 
-        ResponseEntity<PostResponseDTO> response = postResource.updatePost(
-                1, "Updated Title", "Updated Content", null, "PUBLISHED", null, null, null
-        );
+        ResponseEntity<PostResponseDTO> response = postResource.updatePost(1, dto, null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo(postResponseDTO);
