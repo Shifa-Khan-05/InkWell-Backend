@@ -95,6 +95,7 @@ public class AuthResource {
 	public ResponseEntity<UserResponseDTO> updateProfileWithImage(@PathVariable int userId,
 			@ModelAttribute com.authservice.dto.UserProfileUpdateDTO dto,
 			@RequestParam(value = "image", required = false) MultipartFile image) {
+		System.out.println("CONTROLLER DIAGNOSTIC: Received profile update for user: " + userId);
 		return ResponseEntity.ok(authService.updateProfileWithFile(userId, dto.getFullName(), dto.getUsername(), 
 				dto.getBio(), dto.getAge(), dto.getPassword(), image));
 	}

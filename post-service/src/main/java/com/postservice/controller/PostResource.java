@@ -23,6 +23,7 @@ public class PostResource {
 	@PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<PostResponseDTO> createPost(@ModelAttribute PostCreationDTO dto,
 			@RequestParam(value = "image", required = false) MultipartFile image) throws IOException {
+		System.out.println("CONTROLLER DIAGNOSTIC: Received createPost request for title: " + dto.getTitle());
 		return new ResponseEntity<>(postService.createPostWithImage(dto, image), HttpStatus.CREATED);
 	}
 
