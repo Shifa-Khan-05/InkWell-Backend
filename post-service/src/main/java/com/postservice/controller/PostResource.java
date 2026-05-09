@@ -39,7 +39,11 @@ public class PostResource {
 		dto.setCategoryId(categoryId);
 		dto.setTagIds(tagIds);
 
-		return new ResponseEntity<>(postService.createPostWithImage(dto, image), HttpStatus.CREATED);
+		try {
+			return new ResponseEntity<>(postService.createPostWithImage(dto, image), HttpStatus.CREATED);
+		} catch (Exception e) {
+			return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
 	}
 
 	@PutMapping(value = "/update/{postId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
