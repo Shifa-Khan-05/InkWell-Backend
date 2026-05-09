@@ -242,8 +242,10 @@ public class PostServiceImpl implements PostService {
 		}
 		String fileName = System.currentTimeMillis() + "_" + originalFilename.replaceAll("[^a-zA-Z0-9.-]", "_");
 
-		if (s3Client != null) {
+		// Try S3 first, but catch all errors to prevent hanging the request
+		if (s3Client != null && bucketName != null && !bucketName.isEmpty()) {
 			try {
+				log.info("Attempting S3 upload to bucket: {}", bucketName);
 				com.amazonaws.services.s3.model.ObjectMetadata metadata = new com.amazonaws.services.s3.model.ObjectMetadata();
 				metadata.setContentLength(image.getSize());
 				metadata.setContentType(image.getContentType());
@@ -251,7 +253,7 @@ public class PostServiceImpl implements PostService {
 					.withCannedAcl(com.amazonaws.services.s3.model.CannedAccessControlList.PublicRead));
 				return s3Client.getUrl(bucketName, "post_uploads/" + fileName).toString();
 			} catch (Exception e) {
-				log.warn("S3 upload failed, falling back to local storage: {}", e.getMessage());
+				log.warn("S3 upload failed ({}). Falling back to local storage.", e.getMessage());
 			}
 		}
 
