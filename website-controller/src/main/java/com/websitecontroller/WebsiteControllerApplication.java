@@ -7,7 +7,8 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 
 @SpringBootApplication(exclude = { 
     org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration.class,
-    org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration.class 
+    org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration.class,
+    org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration.class
 })
 @EnableFeignClients
 @EnableDiscoveryClient
