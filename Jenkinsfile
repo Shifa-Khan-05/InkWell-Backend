@@ -68,7 +68,8 @@ pipeline {
                     }
 
                     for (service in servicesToBuild) {
-                        def imageName = "${env.DOCKER_CREDS_USR}/inkwell-${service}:latest"
+                        def imageName = "shifakhan2005/inkwell-${service}:latest"
+                        echo "Building and Pushing: ${imageName}"
                         sh "docker build -t ${imageName} ./${service}"
                         sh "docker push ${imageName}"
                     }

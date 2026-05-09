@@ -90,56 +90,68 @@ public class PostServiceImpl implements PostService {
 	@Transactional
 	@CacheEvict(value = "publishedPosts", allEntries = true)
 	public PostResponseDTO createPostWithImage(PostCreationDTO dto, MultipartFile image) throws IOException {
-		log.info("DIAGNOSTIC: Step 1 - Initiated creation for title: {}", dto.getTitle());
+		log.info("DIAGNOSTIC: Step 1 - Initiated creation for title: '{}'", dto.getTitle());
+		log.info("DIAGNOSTIC: Incoming DTO: {}", dto);
+		
+		if (dto.getAuthorId() <= 0) {
+			log.error("DIAGNOSTIC FAILURE: Author ID is {} (Invalid). Cannot create post.", dto.getAuthorId());
+			throw new RuntimeException("Invalid Author ID. Please re-login.");
+		}
+
 		Post post = new Post();
-		post.setTitle(dto.getTitle());
+		post.setTitle(dto.getTitle() != null ? dto.getTitle() : "Untitled Manuscript");
 		post.setContent(dto.getContent());
 		post.setAuthorId(dto.getAuthorId());
 		post.setCategoryId(dto.getCategoryId());
 		post.setStatus(dto.getStatus() != null ? dto.getStatus() : "DRAFT");
-		log.info("DIAGNOSTIC: Step 2 - Post object populated. Status: {}", post.getStatus());
+		
+		log.info("DIAGNOSTIC: Step 2 - Post object populated. Author: {}, Status: {}", post.getAuthorId(), post.getStatus());
 
 		if (image != null && !image.isEmpty()) {
-			log.info("DIAGNOSTIC: Step 3 - Image detected. Size: {} bytes. Starting upload.", image.getSize());
+			log.info("DIAGNOSTIC: Step 3 - Image detected. Size: {} bytes.", image.getSize());
 			try {
 				String imageUrl = saveImageToDisk(image);
 				post.setFeaturedImageUrl(imageUrl);
-				log.info("DIAGNOSTIC: Step 4 - Image saved successfully. URL: {}", imageUrl);
+				log.info("DIAGNOSTIC: Step 4 - Image saved. URL: {}", imageUrl);
 			} catch (Exception e) {
 				log.error("DIAGNOSTIC FAILURE: Step 4 - Image storage failed: {}", e.getMessage());
 				throw e;
 			}
-		} else {
-			log.info("DIAGNOSTIC: Step 3 - No image provided.");
 		}
 
 		log.info("DIAGNOSTIC: Step 5 - Generating slug and excerpt.");
-		post.setSlug(generateUniqueSlug(dto.getTitle()));
-		post.setExcerpt(generateExcerpt(dto));
-		post.setReadTimeMin(calculateReadTime(dto.getContent()));
-		post.setCreatedAt(LocalDateTime.now());
-		post.setUpdatedAt(LocalDateTime.now());
-		log.info("DIAGNOSTIC: Step 6 - Metadata generated. Slug: {}", post.getSlug());
+		try {
+			post.setSlug(generateUniqueSlug(post.getTitle()));
+			post.setExcerpt(generateExcerpt(dto));
+			post.setReadTimeMin(calculateReadTime(dto.getContent()));
+			post.setCreatedAt(LocalDateTime.now());
+			post.setUpdatedAt(LocalDateTime.now());
+		} catch (Exception e) {
+			log.error("DIAGNOSTIC FAILURE: Step 5 - Metadata generation failed: {}", e.getMessage());
+			throw e;
+		}
 
 		try {
-			log.info("DIAGNOSTIC: Step 7 - Attempting database save.");
+			log.info("DIAGNOSTIC: Step 7 - Attempting database save for slug: {}", post.getSlug());
 			Post savedPost = postRepository.save(post);
 			log.info("DIAGNOSTIC: Step 8 - Database save successful. ID: {}", savedPost.getPostId());
 
-			log.info("DIAGNOSTIC: Step 9 - Triggering sync and notifications.");
 			if ("PUBLISHED".equalsIgnoreCase(savedPost.getStatus())) {
 				try {
 					triggerTaxonomySync(savedPost);
 					sendRabbitMessage(savedPost, "NEW_POST");
 				} catch (Exception e) {
-					log.warn("DIAGNOSTIC: Step 9 WARNING - Sync failed, but post is saved: {}", e.getMessage());
+					log.warn("DIAGNOSTIC: Step 9 WARNING - Sync failed: {}", e.getMessage());
 				}
 			}
 
-			log.info("DIAGNOSTIC: Step 10 - Finalizing response");
+			log.info("DIAGNOSTIC: Step 10 - Finalizing response via enrichWithAuthor");
 			return enrichWithAuthor(savedPost);
 		} catch (Exception e) {
-			log.error("DIAGNOSTIC FATAL ERROR: Detailed crash report: ", e);
+			log.error("DIAGNOSTIC FATAL ERROR: Database save or enrichment failed!");
+			log.error("Exception type: {}", e.getClass().getName());
+			log.error("Message: {}", e.getMessage());
+			e.printStackTrace();
 			throw e;
 		}
 	}

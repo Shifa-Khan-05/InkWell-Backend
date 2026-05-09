@@ -4,6 +4,8 @@ import com.authservice.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import java.util.Optional;
+import java.util.List;
+import java.time.LocalDateTime;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Integer> {
@@ -14,5 +16,8 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 	boolean existsByUsername(String username);
 
 	Optional<User> findByResetToken(String token);
-	java.util.List<User> findByRole(String role);
+
+	List<User> findByRole(String role);
+
+	List<User> findByRoleAndSubscriptionEndDateBefore(String role, LocalDateTime date);
 }

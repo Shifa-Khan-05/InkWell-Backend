@@ -12,6 +12,12 @@ services:
       resources:
         limits:
           memory: 350M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
 
   inkwell-redis:
     image: redis:alpine
@@ -38,7 +44,8 @@ services:
     ports:
       - "8081:8081"
     depends_on:
-      - inkwell-eureka
+      inkwell-eureka:
+        condition: service_healthy
     networks:
       - inkwell-network
     environment:
@@ -55,7 +62,8 @@ services:
     ports:
       - "8084:8084"
     depends_on:
-      - inkwell-eureka
+      inkwell-eureka:
+        condition: service_healthy
     networks:
       - inkwell-network
     environment:
@@ -86,7 +94,8 @@ services:
     ports:
       - "8082:8082"
     depends_on:
-      - inkwell-eureka
+      inkwell-eureka:
+        condition: service_healthy
     networks:
       - inkwell-network
     environment:
@@ -116,7 +125,8 @@ services:
     ports:
       - "8083:8083"
     depends_on:
-      - inkwell-eureka
+      inkwell-eureka:
+        condition: service_healthy
     networks:
       - inkwell-network
     environment:
@@ -144,7 +154,8 @@ services:
     ports:
       - "8087:8087"
     depends_on:
-      - inkwell-eureka
+      inkwell-eureka:
+        condition: service_healthy
     networks:
       - inkwell-network
     environment:
@@ -169,7 +180,8 @@ services:
     ports:
       - "8086:8086"
     depends_on:
-      - inkwell-eureka
+      inkwell-eureka:
+        condition: service_healthy
     networks:
       - inkwell-network
     environment:
@@ -193,8 +205,10 @@ services:
     ports:
       - "8090:8090"
     depends_on:
-      - inkwell-eureka
-      - rabbitmq
+      inkwell-eureka:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
     networks:
       - inkwell-network
     environment:
@@ -219,7 +233,8 @@ services:
     ports:
       - "8089:8089"
     depends_on:
-      - inkwell-eureka
+      inkwell-eureka:
+        condition: service_healthy
     networks:
       - inkwell-network
     environment:
@@ -242,7 +257,8 @@ services:
     ports:
       - "8085:8085"
     depends_on:
-      - inkwell-eureka
+      inkwell-eureka:
+        condition: service_healthy
     networks:
       - inkwell-network
     environment:
@@ -263,7 +279,8 @@ services:
     ports:
       - "9001:9001"
     depends_on:
-      - inkwell-eureka
+      inkwell-eureka:
+        condition: service_healthy
     networks:
       - inkwell-network
     environment:
@@ -284,7 +301,8 @@ services:
     ports:
       - "9090:9090"
     depends_on:
-      - inkwell-eureka
+      inkwell-eureka:
+        condition: service_healthy
     networks:
       - inkwell-network
     environment:
