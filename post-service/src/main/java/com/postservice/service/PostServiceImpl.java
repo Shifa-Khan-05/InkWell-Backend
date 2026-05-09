@@ -126,15 +126,20 @@ public class PostServiceImpl implements PostService {
 			Post savedPost = postRepository.save(post);
 			log.info("DIAGNOSTIC: Step 8 - Database save successful. ID: {}", savedPost.getPostId());
 
+			log.info("DIAGNOSTIC: Step 9 - Triggering sync and notifications.");
 			if ("PUBLISHED".equalsIgnoreCase(savedPost.getStatus())) {
-				log.info("DIAGNOSTIC: Step 9 - Triggering sync and notifications.");
-				triggerTaxonomySync(savedPost);
-				sendRabbitMessage(savedPost, "NEW_POST");
+				try {
+					triggerTaxonomySync(savedPost);
+					sendRabbitMessage(savedPost, "NEW_POST");
+				} catch (Exception e) {
+					log.warn("DIAGNOSTIC: Step 9 WARNING - Sync failed, but post is saved: {}", e.getMessage());
+				}
 			}
 
+			log.info("DIAGNOSTIC: Step 10 - Finalizing response");
 			return enrichWithAuthor(savedPost);
 		} catch (Exception e) {
-			log.error("DIAGNOSTIC FAILURE: Step 7/8 - Database save failed: {}", e.getMessage(), e);
+			log.error("DIAGNOSTIC FATAL ERROR: Detailed crash report: ", e);
 			throw e;
 		}
 	}
@@ -276,7 +281,8 @@ public class PostServiceImpl implements PostService {
 		}
 
 		try {
-			Path uploadPath = Paths.get("post_uploads").toAbsolutePath();
+			// FORCE absolute path for container consistency
+			Path uploadPath = Paths.get("/app/post_uploads").toAbsolutePath();
 			if (!Files.exists(uploadPath)) {
 				Files.createDirectories(uploadPath);
 				log.info("Created missing directory: {}", uploadPath);
@@ -286,15 +292,13 @@ public class PostServiceImpl implements PostService {
 			log.info("Saving file to: {}", filePath);
 			Files.copy(image.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 			
-			// Ensure gatewayUrl doesn't have trailing slash issues
 			String baseUrl = gatewayUrl;
 			if (baseUrl != null && baseUrl.endsWith("/")) {
 				baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
 			}
 			return baseUrl + "/post_uploads/" + fileName;
 		} catch (Exception e) {
-			log.error("CRITICAL STORAGE FAILURE: Could not save file locally. Path: {}, Error: {}", 
-					Paths.get("post_uploads").toAbsolutePath(), e.getMessage(), e);
+			log.error("CRITICAL STORAGE FAILURE: Path: /app/post_uploads, Error: {}", e.getMessage(), e);
 			throw new IOException("Server storage error: " + e.getMessage());
 		}
 	}
@@ -310,8 +314,20 @@ public class PostServiceImpl implements PostService {
 		return finalSlug;
 	}
 
-	private PostResponseDTO enrichWithAuthor(Post post) {
-		PostResponseDTO dto = modelMapper.map(post, PostResponseDTO.class);
+		PostResponseDTO dto = new PostResponseDTO();
+		try {
+			dto = modelMapper.map(post, PostResponseDTO.class);
+		} catch (Exception e) {
+			log.error("Mapping failure for post ID {}: {}", post.getPostId(), e.getMessage());
+			// Manual fallback if mapping fails
+			dto.setPostId(post.getPostId());
+			dto.setTitle(post.getTitle());
+			dto.setSlug(post.getSlug());
+			dto.setContent(post.getContent());
+			dto.setAuthorId(post.getAuthorId());
+			dto.setFeaturedImageUrl(post.getFeaturedImageUrl());
+		}
+
 		if (dto.getFeaturedImageUrl() != null && (dto.getFeaturedImageUrl().startsWith("http://localhost:8080/") || dto.getFeaturedImageUrl().startsWith("http://localhost:8081/"))) {
 			dto.setFeaturedImageUrl(dto.getFeaturedImageUrl().replace("http://localhost:8080/", gatewayUrl + "/").replace("http://localhost:8081/", gatewayUrl + "/"));
 		}
@@ -319,9 +335,11 @@ public class PostServiceImpl implements PostService {
 		try {
 			log.debug("Fetching author info for ID: {}", post.getAuthorId());
 			UserResponseDTO author = authClient.getUserById(post.getAuthorId());
-			dto.setFullName(author.getFullName());
+			if (author != null) {
+				dto.setFullName(author.getFullName());
+			}
 		} catch (Exception e) {
-			log.warn("Author lookup failed for ID {}: {}. This usually means a connection issue to Auth-Service.", post.getAuthorId(), e.getMessage());
+			log.warn("Author lookup failed for ID {}: {}.", post.getAuthorId(), e.getMessage());
 			dto.setFullName("InkWell Author");
 		}
 		return dto;

@@ -286,6 +286,12 @@ public class AuthServiceImpl implements AuthService {
             targetRole = "ROLE_" + targetRole;
         }
 
+        // Check if user already has this role to prevent 400 error
+        if (user.getRole().equalsIgnoreCase(targetRole)) {
+            log.info("User {} already has the role {}. Skipping request.", userId, targetRole);
+            return; // No need to request what you already have
+        }
+
         if (roleRequestRepository.existsByUserUserIdAndStatus(userId, "PENDING")) {
             log.warn("User {} already has a pending request", userId);
             throw new com.authservice.exception.BadRequestException("A request is already pending.");
