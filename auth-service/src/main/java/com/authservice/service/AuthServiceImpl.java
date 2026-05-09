@@ -125,23 +125,29 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public UserResponseDTO updateProfileWithFile(int userId, String fullName, String username, String bio, Integer age, String password, MultipartFile image) {
-        log.info("Updating profile with file for user ID: {}", userId);
+        log.info("DIAGNOSTIC: Step 1 - Initiated profile update for user ID: {}", userId);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new com.authservice.exception.ResourceNotFoundException(USER_NOT_FOUND));
                 
+        log.info("DIAGNOSTIC: Step 2 - Current user state: {}", user.getEmail());
         if (fullName != null && !fullName.isEmpty()) user.setFullName(fullName);
         if (username != null && !username.isEmpty()) user.setUsername(username);
         if (bio != null) user.setBio(bio);
         if (age != null) user.setAge(age);
-        if (password != null && !password.isEmpty()) user.setPasswordHash(passwordEncoder.encode(password));
+        if (password != null && !password.isEmpty()) {
+            log.info("DIAGNOSTIC: Step 3 - Updating password credentials.");
+            user.setPasswordHash(passwordEncoder.encode(password));
+        }
 
         if (image != null && !image.isEmpty()) {
+            log.info("DIAGNOSTIC: Step 4 - New avatar detected. Size: {} bytes", image.getSize());
             try {
                 String fileName = "user_" + userId + "_" + System.currentTimeMillis() + ".jpg";
                 boolean s3Success = false;
 
                 if (s3Client != null && bucketName != null && !bucketName.isEmpty()) {
                     try {
+                        log.info("DIAGNOSTIC: Step 5 - Attempting S3 storage.");
                         com.amazonaws.services.s3.model.ObjectMetadata metadata = new com.amazonaws.services.s3.model.ObjectMetadata();
                         metadata.setContentLength(image.getSize());
                         metadata.setContentType(image.getContentType());
@@ -149,12 +155,14 @@ public class AuthServiceImpl implements AuthService {
                             .withCannedAcl(com.amazonaws.services.s3.model.CannedAccessControlList.PublicRead));
                         user.setProfileImageUrl(s3Client.getUrl(bucketName, "uploads/" + fileName).toString());
                         s3Success = true;
+                        log.info("DIAGNOSTIC: Step 6 - S3 upload complete. URL: {}", user.getProfileImageUrl());
                     } catch (Exception s3Ex) {
-                        log.warn("S3 upload failed, falling back to local storage: {}", s3Ex.getMessage());
+                        log.warn("DIAGNOSTIC: S3 upload failed, falling back to local: {}", s3Ex.getMessage());
                     }
                 }
 
                 if (!s3Success) {
+                    log.info("DIAGNOSTIC: Step 5 - Attempting local filesystem storage.");
                     Path uploadPath = Paths.get("uploads").toAbsolutePath();
                     if (!Files.exists(uploadPath)) Files.createDirectories(uploadPath);
                     
@@ -163,14 +171,24 @@ public class AuthServiceImpl implements AuthService {
                     
                     String baseUrl = gatewayUrl;
                     if (baseUrl != null && baseUrl.endsWith("/")) baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
-                    user.setProfileImageUrl(baseUrl + "/uploads/" + fileName);
+                    user.setProfileImageUrl(baseUrl + "/auth/uploads/" + fileName); // Note the /auth/ prefix for routing
+                    log.info("DIAGNOSTIC: Step 6 - Local storage complete. URL: {}", user.getProfileImageUrl());
                 }
             } catch (IOException e) {
-                log.error("Image upload failed: {}", e.getMessage());
+                log.error("DIAGNOSTIC FAILURE: Step 4 - Image processing failed: {}", e.getMessage());
                 throw new com.authservice.exception.BadRequestException("File storage failed: " + e.getMessage());
             }
         }
-        return mapToResponseDTO(userRepository.save(user));
+
+        try {
+            log.info("DIAGNOSTIC: Step 7 - Saving user identity updates.");
+            User savedUser = userRepository.save(user);
+            log.info("DIAGNOSTIC: Step 8 - Identity updated successfully.");
+            return mapToResponseDTO(savedUser);
+        } catch (Exception e) {
+            log.error("DIAGNOSTIC FATAL: Database persistence failed: {}", e.getMessage());
+            throw e;
+        }
     }
 
     @Override
@@ -327,8 +345,8 @@ public class AuthServiceImpl implements AuthService {
 
     private UserResponseDTO mapToResponseDTO(User user) {
         String avatar = user.getProfileImageUrl();
-        if (avatar != null && (avatar.startsWith("http://localhost:8080/") || avatar.startsWith("http://localhost:8081/"))) {
-            avatar = avatar.replace("http://localhost:8080/", gatewayUrl + "/").replace("http://localhost:8081/", gatewayUrl + "/");
+        if (avatar != null && avatar.contains("localhost")) {
+            avatar = avatar.replaceAll("http://localhost:[0-9]+/", gatewayUrl + "/");
         }
         return new UserResponseDTO(
             user.getUserId(), user.getUsername(), user.getEmail(), user.getRole(),

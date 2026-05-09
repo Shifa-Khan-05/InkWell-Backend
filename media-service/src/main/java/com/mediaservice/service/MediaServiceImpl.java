@@ -18,6 +18,9 @@ public class MediaServiceImpl implements MediaService {
 	private final MediaRepository repository;
 	private final String UPLOAD_DIR = "uploads/media/";
 
+	@org.springframework.beans.factory.annotation.Value("${gateway.url:http://localhost:8081}")
+	private String gatewayUrl;
+
 	@Override
 	public Media uploadMedia(MultipartFile file, Integer uploaderId, String altText) throws IOException {
 		// 1. Create directory if not exists
@@ -40,7 +43,9 @@ public class MediaServiceImpl implements MediaService {
 		media.setMimeType(file.getContentType());
 		media.setSizeKb(file.getSize() / 1024);
 		media.setAltText(altText);
-		media.setUrl("http://localhost:8087/media/display/" + fileName); // Endpoint for serving
+		
+		// Fix: Use Gateway URL for production compatibility
+		media.setUrl(gatewayUrl + "/media/display/" + fileName); 
 
 		return repository.save(media);
 	}

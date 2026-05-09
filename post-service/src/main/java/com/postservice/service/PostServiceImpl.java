@@ -345,10 +345,9 @@ public class PostServiceImpl implements PostService {
 		}
 
 		// 2. Gateway URL Normalization
-		if (dto.getFeaturedImageUrl() != null && (dto.getFeaturedImageUrl().contains("localhost"))) {
-			dto.setFeaturedImageUrl(dto.getFeaturedImageUrl()
-					.replace("http://localhost:8080/", gatewayUrl + "/")
-					.replace("http://localhost:8081/", gatewayUrl + "/"));
+		if (dto.getFeaturedImageUrl() != null && dto.getFeaturedImageUrl().contains("localhost")) {
+			// Catch any localhost port (8080, 8081, 8087, etc.)
+			dto.setFeaturedImageUrl(dto.getFeaturedImageUrl().replaceAll("http://localhost:[0-9]+/", gatewayUrl + "/"));
 		}
 		
 		// 3. Fail-Safe Author Lookup
