@@ -8,6 +8,9 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.HashMap;
 import java.util.Map;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -15,14 +18,16 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, String>> handleException(Exception ex) {
+        log.error("DIAGNOSTIC: Unhandled exception caught: {}", ex.getMessage(), ex);
         Map<String, String> response = new HashMap<>();
-        response.put(ERROR_KEY, "Unable to process your request right now. Please try again.");
+        response.put(ERROR_KEY, "Internal Server Error. Please check logs.");
         response.put("details", ex.getMessage());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
     }
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException ex) {
+        log.error("DIAGNOSTIC: Runtime exception caught: {}", ex.getMessage(), ex);
         Map<String, String> response = new HashMap<>();
         if (ex.getMessage() != null && (ex.getMessage().contains("Access is denied") || ex.getMessage().contains("Token") || ex.getMessage().contains("expired"))) {
              response.put(ERROR_KEY, "Your session expired or you are unauthorized. Please login again.");

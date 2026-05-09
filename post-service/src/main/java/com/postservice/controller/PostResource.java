@@ -4,6 +4,7 @@ import com.postservice.dto.PostCreationDTO;
 import com.postservice.dto.PostResponseDTO;
 import com.postservice.service.PostService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/posts")
 @RequiredArgsConstructor
@@ -23,8 +25,21 @@ public class PostResource {
 	@PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<PostResponseDTO> createPost(@ModelAttribute PostCreationDTO dto,
 			@RequestParam(value = "image", required = false) MultipartFile image) throws IOException {
-		System.out.println("CONTROLLER DIAGNOSTIC: Received createPost request for title: " + dto.getTitle());
-		return new ResponseEntity<>(postService.createPostWithImage(dto, image), HttpStatus.CREATED);
+		log.info("DIAGNOSTIC: createPost called with DTO: {}", dto);
+		if (image != null) {
+			log.info("DIAGNOSTIC: Image received: {}, size: {}", image.getOriginalFilename(), image.getSize());
+		} else {
+			log.warn("DIAGNOSTIC: No image received in multipart request");
+		}
+		
+		try {
+			PostResponseDTO response = postService.createPostWithImage(dto, image);
+			log.info("DIAGNOSTIC: Post created successfully with ID: {}", response.getPostId());
+			return new ResponseEntity<>(response, HttpStatus.CREATED);
+		} catch (Exception e) {
+			log.error("DIAGNOSTIC: CRITICAL FAILURE in createPost: {}", e.getMessage(), e);
+			throw e;
+		}
 	}
 
 	@PutMapping(value = "/update/{postId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

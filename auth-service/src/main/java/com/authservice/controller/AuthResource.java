@@ -9,6 +9,7 @@ import com.authservice.repository.UserRepository;
 import com.authservice.service.AuthService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -83,10 +84,13 @@ public class AuthResource {
 
 	@GetMapping("/profile/{userId}")
 	public ResponseEntity<Object> getProfile(@PathVariable int userId) {
+		log.info("DIAGNOSTIC: Profile lookup received for ID: {}", userId);
 		try {
 			UserResponseDTO user = authService.getUserById(userId);
+			log.info("DIAGNOSTIC: Profile lookup successful for ID: {}", userId);
 			return ResponseEntity.ok(user);
 		} catch (com.authservice.exception.ResourceNotFoundException e) {
+			log.warn("DIAGNOSTIC: User not found for ID: {}", userId);
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found.");
 		}
 	}
