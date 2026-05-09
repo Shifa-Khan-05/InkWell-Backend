@@ -256,18 +256,26 @@ public class PostServiceImpl implements PostService {
 		}
 
 		try {
-			Path uploadPath = Paths.get("post_uploads");
+			Path uploadPath = Paths.get("post_uploads").toAbsolutePath();
 			if (!Files.exists(uploadPath)) {
 				Files.createDirectories(uploadPath);
+				log.info("Created missing directory: {}", uploadPath);
 			}
 
 			Path filePath = uploadPath.resolve(fileName);
-			log.info("Attempting to save file to absolute path: {}", filePath.toAbsolutePath());
+			log.info("Saving file to: {}", filePath);
 			Files.copy(image.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-			return gatewayUrl + "/post_uploads/" + fileName;
-		} catch (IOException e) {
-			log.error("CRITICAL: Failed to save post image to disk. Check folder permissions (chmod 777 post_uploads). Error: {}", e.getMessage());
-			throw new IOException("Server cannot write to storage: " + e.getMessage());
+			
+			// Ensure gatewayUrl doesn't have trailing slash issues
+			String baseUrl = gatewayUrl;
+			if (baseUrl != null && baseUrl.endsWith("/")) {
+				baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+			}
+			return baseUrl + "/post_uploads/" + fileName;
+		} catch (Exception e) {
+			log.error("CRITICAL STORAGE FAILURE: Could not save file locally. Path: {}, Error: {}", 
+					Paths.get("post_uploads").toAbsolutePath(), e.getMessage(), e);
+			throw new IOException("Server storage error: " + e.getMessage());
 		}
 	}
 

@@ -81,7 +81,7 @@ services:
         limits:
           memory: 300M
     volumes:
-      - ./uploads:/uploads
+      - ./uploads:/app/uploads
 
   post-service:
     image: ${DOCKER_USERNAME:-shifakhan2005}/inkwell-post-service:latest
@@ -105,12 +105,14 @@ services:
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - AWS_S3_BUCKET=${AWS_S3_BUCKET}
       - AWS_REGION=${AWS_REGION}
+      - FRONTEND_URL=${FRONTEND_URL:-https://inkwell-blogging.netlify.app}
     deploy:
       resources:
         limits:
           memory: 300M
     volumes:
-      - ./post_uploads:/post_uploads
+      - ./post_uploads:/app/post_uploads
+
 
   comment-service:
     image: ${DOCKER_USERNAME:-shifakhan2005}/inkwell-comment-service:latest
@@ -124,7 +126,7 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=prod
       - EUREKA_URL=http://inkwell-eureka:8761/eureka/
-      - DB_URL=${POST_DB_URL}
+      - DB_URL=${COMMENT_DB}
       - SPRING_REDIS_HOST=inkwell-redis
       - SPRING_RABBITMQ_HOST=rabbitmq
       - DB_USERNAME=${DB_USERNAME}
@@ -207,7 +209,7 @@ services:
       - EMAIL_PASS=${EMAIL_PASS}
       - SPRING_RABBITMQ_HOST=rabbitmq
       - SPRING_RABBITMQ_PORT=5672
-      - GATEWAY_URL=https://3.108.190.193.nip.io
+      - GATEWAY_URL=${GATEWAY_URL:-https://3.108.190.193.nip.io}
     deploy:
       resources:
         limits:
