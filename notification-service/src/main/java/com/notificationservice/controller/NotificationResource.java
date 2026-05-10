@@ -15,11 +15,31 @@ public class NotificationResource {
 
 
 	private final NotificationServiceImpl notificationService;
+	private final com.notificationservice.client.AuthClient authClient;
 
 	@PostMapping("/send")
 	public ResponseEntity<Notification> send(@RequestBody Notification note) {
-		return ResponseEntity.ok(notificationService.createNotification(note.getRecipientId(), note.getActorId(),
-				note.getType(), note.getMessage(), note.getRelatedId()));
+		Notification savedNote = notificationService.createNotification(note.getRecipientId(), note.getActorId(),
+				note.getType(), note.getMessage(), note.getRelatedId());
+        try {
+            java.util.Map<String, Object> user = authClient.getUserById(note.getRecipientId());
+            String email = (String) user.get("email");
+            if (email != null) {
+                String subject = "InkWell Platform Alert";
+                String title = "New Notification";
+                if ("NEW_COMMENT".equalsIgnoreCase(note.getType())) {
+                    subject = "New Discussion on Your Post";
+                    title = "You got a comment! \uD83D\uDDE8\uFE0F";
+                } else if ("COMMENT_APPROVED".equalsIgnoreCase(note.getType())) {
+                    subject = "Discussion Approved";
+                    title = "Comment Live \uD83C\uDF89";
+                }
+                notificationService.sendStyledEmail(email, subject, title, note.getMessage(), "https://inkwell-blogging.netlify.app/dashboard");
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to send email from controller: " + e.getMessage());
+        }
+		return ResponseEntity.ok(savedNote);
 	}
 
 	@GetMapping("/user/{userId}")

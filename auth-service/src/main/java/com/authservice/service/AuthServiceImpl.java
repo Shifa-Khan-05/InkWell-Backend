@@ -365,6 +365,18 @@ public class AuthServiceImpl implements AuthService {
 
         if ("APPROVED".equalsIgnoreCase(status)) {
             updateUserRole(request.getUser().getUserId(), request.getRequestedRole());
+        } else if ("REJECTED".equalsIgnoreCase(status)) {
+            try {
+                Map<String, String> mailData = new HashMap<>();
+                mailData.put("recipientEmail", request.getUser().getEmail());
+                mailData.put("subject", "InkWell Role Request Update");
+                mailData.put("title", "Request Rejected");
+                mailData.put("body", "Your request for the role of " + request.getRequestedRole() + " has been reviewed and declined by the administrators.");
+                mailData.put("actionUrl", frontendUrl + "/dashboard");
+                notificationClient.sendStyledEmail(mailData);
+            } catch (Exception e) {
+                log.warn("Failed to send role rejection notification: {}", e.getMessage());
+            }
         }
     }
 
