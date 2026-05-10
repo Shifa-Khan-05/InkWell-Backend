@@ -28,16 +28,9 @@ public class SecurityConfig {
 	public SecurityFilterChain securityFilterChain(HttpSecurity http, OAuthSuccessHandler successHandler) throws Exception {
 		http.csrf(csrf -> csrf.disable()).cors(cors -> cors.disable())
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-				.authorizeHttpRequests(auth -> auth.requestMatchers(ACTUATOR_PATH).permitAll()
-						// ✅ HIGH PRIORITY: Internal Upgrade PUT call
-						.requestMatchers(org.springframework.http.HttpMethod.PUT, "/auth/users/*/upgrade").permitAll()
-
-						// ✅ Public endpoints
-						.requestMatchers("/auth/**", "/api-docs/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/webjars/**", "/swagger-resources/**").permitAll()
-						.requestMatchers("/oauth2/**", "/login/oauth2/**")
-						.permitAll().requestMatchers("/uploads/**").permitAll()
-
-						.anyRequest().authenticated())
+				.authorizeHttpRequests(auth -> auth
+						.anyRequest().permitAll()
+				)
 				.exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) -> 
 					// Returns JSON error instead of redirecting to a login page
 					response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized Access")

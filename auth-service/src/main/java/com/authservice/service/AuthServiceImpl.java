@@ -162,8 +162,7 @@ public class AuthServiceImpl implements AuthService {
                 }
 
                 if (!s3Success) {
-                    log.info("DIAGNOSTIC: Step 5 - Attempting local filesystem storage.");
-                    Path uploadPath = Paths.get("uploads").toAbsolutePath();
+                    Path uploadPath = Paths.get("/app/uploads").toAbsolutePath();
                     if (!Files.exists(uploadPath)) Files.createDirectories(uploadPath);
                     
                     Path filePath = uploadPath.resolve(fileName);
@@ -323,6 +322,19 @@ public class AuthServiceImpl implements AuthService {
                 .build();
         roleRequestRepository.save(request);
         log.info("Role request for user {} saved successfully", userId);
+
+        // ✅ Notify Admin about the role change request
+        try {
+            Map<String, String> mailData = new HashMap<>();
+            mailData.put("recipientEmail", "admin@inkwell.com"); // Standard Admin inbox
+            mailData.put("subject", "Role Upgrade Request: " + user.getUsername());
+            mailData.put("title", "Upgrade Protocol Initiated");
+            mailData.put("body", "User " + user.getFullName() + " has requested the role of " + requestedRole + ".");
+            mailData.put("actionUrl", frontendUrl + "/dashboard/admin");
+            notificationClient.sendStyledEmail(mailData);
+        } catch (Exception e) {
+            log.error("Failed to notify admin: {}", e.getMessage());
+        }
     }
 
     @Override

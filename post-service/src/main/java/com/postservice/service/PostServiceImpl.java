@@ -93,7 +93,7 @@ public class PostServiceImpl implements PostService {
 		log.info("DIAGNOSTIC: Step 1 - Initiated creation for title: '{}'", dto.getTitle());
 		log.info("DIAGNOSTIC: Incoming DTO: {}", dto);
 		
-		if (dto.getAuthorId() <= 0) {
+		if (dto.getAuthorId() == null || dto.getAuthorId() <= 0) {
 			log.error("DIAGNOSTIC FAILURE: Author ID is {} (Invalid). Cannot create post.", dto.getAuthorId());
 			throw new RuntimeException("Invalid Author ID. Please re-login.");
 		}

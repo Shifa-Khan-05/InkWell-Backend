@@ -18,7 +18,7 @@ public class MediaServiceImpl implements MediaService {
 	private final MediaRepository repository;
 	private final String UPLOAD_DIR = "uploads/media/";
 
-	@org.springframework.beans.factory.annotation.Value("${gateway.url:http://localhost:8081}")
+	@org.springframework.beans.factory.annotation.Value("${gateway.url:https://3.108.190.193.nip.io}")
 	private String gatewayUrl;
 
 	@Override
