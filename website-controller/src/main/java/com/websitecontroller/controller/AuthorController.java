@@ -20,6 +20,12 @@ public class AuthorController {
 
     private final PostClient postClient;
     private final NotificationClient notificationClient;
+    private final com.websitecontroller.client.MediaClient mediaClient;
+
+    @GetMapping("/assets/{authorId}")
+    public ResponseEntity<List<Map<String, Object>>> getAuthorAssets(@PathVariable int authorId) {
+        return ResponseEntity.ok(mediaClient.getMediaByUploader(authorId));
+    }
 
     @GetMapping("/dashboard/{authorId}")
     public ResponseEntity<Map<String, Object>> getDashboardData(@PathVariable int authorId) {

@@ -255,7 +255,20 @@ public class AuthServiceImpl implements AuthService {
         if (!formattedRole.startsWith(ROLE_PREFIX)) formattedRole = ROLE_PREFIX + formattedRole;
 
         user.setRole(formattedRole);
-        userRepository.save(user);
+        User savedUser = userRepository.save(user);
+
+        // ✅ Notify Admin/User about manual role change
+        try {
+            Map<String, String> mailData = new HashMap<>();
+            mailData.put("recipientEmail", savedUser.getEmail());
+            mailData.put("subject", "InkWell Account Update");
+            mailData.put("title", "Credential Status Change");
+            mailData.put("body", "Your account role has been updated to: " + formattedRole + ".");
+            mailData.put("actionUrl", frontendUrl + "/dashboard");
+            notificationClient.sendStyledEmail(mailData);
+        } catch (Exception e) {
+            log.warn("Failed to send role update notification: {}", e.getMessage());
+        }
     }
 
     @Override

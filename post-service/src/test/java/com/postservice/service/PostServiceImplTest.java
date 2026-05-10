@@ -286,7 +286,7 @@ class PostServiceImplTest {
 
     @Test
     void getPostBySlug_SuccessWithUser() {
-        when(postRepository.findBySlug("test-title")).thenReturn(Optional.of(post));
+        when(postRepository.findBySlugIgnoreCase("test-title")).thenReturn(Optional.of(post));
         when(modelMapper.map(post, PostResponseDTO.class)).thenReturn(responseDTO);
         when(authClient.getUserById(1)).thenReturn(userResponseDTO);
         when(likeRepository.existsByPostIdAndUserId(1, 2)).thenReturn(true);
@@ -298,7 +298,7 @@ class PostServiceImplTest {
     
     @Test
     void getPostBySlug_SuccessWithoutUser() {
-        when(postRepository.findBySlug("test-title")).thenReturn(Optional.of(post));
+        when(postRepository.findBySlugIgnoreCase("test-title")).thenReturn(Optional.of(post));
         when(modelMapper.map(post, PostResponseDTO.class)).thenReturn(responseDTO);
         when(authClient.getUserById(1)).thenReturn(userResponseDTO);
 
@@ -310,7 +310,7 @@ class PostServiceImplTest {
 
     @Test
     void getPostBySlug_NotFound() {
-        when(postRepository.findBySlug("test")).thenReturn(Optional.empty());
+        when(postRepository.findBySlugIgnoreCase("test")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> postService.getPostBySlug("test", 1))
                 .isInstanceOf(RuntimeException.class)

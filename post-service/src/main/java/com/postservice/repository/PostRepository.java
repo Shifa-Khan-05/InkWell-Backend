@@ -13,7 +13,7 @@ import java.util.Optional;
 @Repository
 public interface PostRepository extends JpaRepository<Post, Integer> {
 
-	Optional<Post> findBySlug(String slug);
+	Optional<Post> findBySlugIgnoreCase(String slug);
 
 	List<Post> findAllByStatus(String status);
 

@@ -194,7 +194,7 @@ public class PostServiceImpl implements PostService {
 	@Override
 	public PostResponseDTO getPostBySlug(String slug, int currentUserId) {
 		log.info("Fetching post by slug: {}", slug);
-		Post post = postRepository.findBySlug(slug).orElseThrow(() -> {
+		Post post = postRepository.findBySlugIgnoreCase(slug).orElseThrow(() -> {
 			log.warn("Post lookup failed for slug: {}", slug);
 			return new RuntimeException("Post not found");
 		});

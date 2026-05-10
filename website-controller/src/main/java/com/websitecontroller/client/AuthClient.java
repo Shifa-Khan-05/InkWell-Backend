@@ -15,5 +15,5 @@ public interface AuthClient {
 	List<Map<String, Object>> getAllUsers(); // To list everyone in the system
 
 	@PutMapping("/auth/users/{userId}/role")
-	void changeUserRole(@PathVariable int userId, @RequestParam String role);
+	void changeUserRole(@PathVariable int userId, @RequestParam("newRole") String role);
 }
