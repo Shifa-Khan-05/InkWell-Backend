@@ -14,7 +14,12 @@ public class WebConfig {
 			@Override
 			public void addCorsMappings(CorsRegistry registry) {
 				registry.addMapping("/**") // Allow all endpoints
-						.allowedOrigins("http://localhost:5173") // Your React URL
+						.allowedOrigins(
+							"http://localhost:5173", 
+							"http://localhost:5174",
+							"https://inkwell-blogging.netlify.app",
+							"https://3.108.190.193.nip.io"
+						)
 						.allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS").allowedHeaders("*")
 						.allowCredentials(true);
 			}
