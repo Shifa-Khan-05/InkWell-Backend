@@ -257,15 +257,15 @@ public class AuthServiceImpl implements AuthService {
         user.setRole(formattedRole);
         User savedUser = userRepository.save(user);
 
-        // ✅ Notify Admin/User about manual role change
+        // ✅ Notify Admin/User about manual role change (Unified In-App + Email)
         try {
-            Map<String, String> mailData = new HashMap<>();
-            mailData.put("recipientEmail", savedUser.getEmail());
-            mailData.put("subject", "InkWell Account Update");
-            mailData.put("title", "Credential Status Change");
-            mailData.put("body", "Your account role has been updated to: " + formattedRole + ".");
-            mailData.put("actionUrl", frontendUrl + "/dashboard");
-            notificationClient.sendStyledEmail(mailData);
+            Map<String, Object> userNote = new HashMap<>();
+            userNote.put("recipientId", savedUser.getUserId());
+            userNote.put("actorId", 0);
+            userNote.put("type", "ROLE_UPDATE");
+            userNote.put("message", "Your account role has been updated to: " + formattedRole + ".");
+            userNote.put("relatedId", savedUser.getUserId());
+            notificationClient.sendNotification(userNote);
         } catch (Exception e) {
             log.warn("Failed to send role update notification: {}", e.getMessage());
         }
@@ -336,17 +336,20 @@ public class AuthServiceImpl implements AuthService {
         roleRequestRepository.save(request);
         log.info("Role request for user {} saved successfully", userId);
 
-        // ✅ Notify Admin about the role change request
+        // ✅ Notify Admins about the role change request (In-App + Auto Email)
         try {
-            Map<String, String> mailData = new HashMap<>();
-            mailData.put("recipientEmail", "admin@inkwell.com"); // Standard Admin inbox
-            mailData.put("subject", "Role Upgrade Request: " + user.getUsername());
-            mailData.put("title", "Upgrade Protocol Initiated");
-            mailData.put("body", "User " + user.getFullName() + " has requested the role of " + requestedRole + ".");
-            mailData.put("actionUrl", frontendUrl + "/dashboard/admin");
-            notificationClient.sendStyledEmail(mailData);
+            List<User> admins = userRepository.findByRole("ROLE_ADMIN");
+            for (User admin : admins) {
+                Map<String, Object> adminNote = new HashMap<>();
+                adminNote.put("recipientId", admin.getUserId());
+                adminNote.put("actorId", userId);
+                adminNote.put("type", "ROLE_REQUEST");
+                adminNote.put("message", user.getUsername() + " requested the " + requestedRole + " role.");
+                adminNote.put("relatedId", user.getUserId());
+                notificationClient.sendNotification(adminNote);
+            }
         } catch (Exception e) {
-            log.error("Failed to notify admin: {}", e.getMessage());
+            log.error("Failed to notify admins: {}", e.getMessage());
         }
     }
 
@@ -365,17 +368,29 @@ public class AuthServiceImpl implements AuthService {
 
         if ("APPROVED".equalsIgnoreCase(status)) {
             updateUserRole(request.getUser().getUserId(), request.getRequestedRole());
+            
+            try {
+                Map<String, Object> userNote = new HashMap<>();
+                userNote.put("recipientId", request.getUser().getUserId());
+                userNote.put("actorId", 0);
+                userNote.put("type", "ROLE_APPROVED");
+                userNote.put("message", "Congratulations! Your request for the " + request.getRequestedRole() + " role has been approved.");
+                userNote.put("relatedId", request.getUser().getUserId());
+                notificationClient.sendNotification(userNote);
+            } catch (Exception e) {
+                log.warn("Failed to send role approval in-app notification: {}", e.getMessage());
+            }
         } else if ("REJECTED".equalsIgnoreCase(status)) {
             try {
-                Map<String, String> mailData = new HashMap<>();
-                mailData.put("recipientEmail", request.getUser().getEmail());
-                mailData.put("subject", "InkWell Role Request Update");
-                mailData.put("title", "Request Rejected");
-                mailData.put("body", "Your request for the role of " + request.getRequestedRole() + " has been reviewed and declined by the administrators.");
-                mailData.put("actionUrl", frontendUrl + "/dashboard");
-                notificationClient.sendStyledEmail(mailData);
+                Map<String, Object> userNote = new HashMap<>();
+                userNote.put("recipientId", request.getUser().getUserId());
+                userNote.put("actorId", 0);
+                userNote.put("type", "ROLE_REJECTED");
+                userNote.put("message", "Your request for the " + request.getRequestedRole() + " role was declined.");
+                userNote.put("relatedId", request.getUser().getUserId());
+                notificationClient.sendNotification(userNote);
             } catch (Exception e) {
-                log.warn("Failed to send role rejection notification: {}", e.getMessage());
+                log.warn("Failed to send role rejection in-app notification: {}", e.getMessage());
             }
         }
     }

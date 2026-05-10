@@ -2,6 +2,9 @@ server:
     port: 8084
     forward-headers-strategy: framework
 
+gateway:
+    url: https://3.108.190.193.nip.io/auth
+
 spring:
     application:
         name: auth-service

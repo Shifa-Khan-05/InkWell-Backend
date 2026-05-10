@@ -1,6 +1,9 @@
 server:
   port: 8082
 
+gateway:
+  url: https://3.108.190.193.nip.io/post
+
 spring:
   application:
     name: post-service

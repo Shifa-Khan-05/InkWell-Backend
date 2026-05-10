@@ -33,6 +33,18 @@ public class NotificationResource {
                 } else if ("COMMENT_APPROVED".equalsIgnoreCase(note.getType())) {
                     subject = "Discussion Approved";
                     title = "Comment Live \uD83C\uDF89";
+                } else if ("ROLE_REQUEST".equalsIgnoreCase(note.getType())) {
+                    subject = "Role Upgrade Request";
+                    title = "Upgrade Protocol Initiated";
+                } else if ("ROLE_APPROVED".equalsIgnoreCase(note.getType())) {
+                    subject = "Role Request Approved";
+                    title = "Upgrade Successful \uD83C\uDF89";
+                } else if ("ROLE_REJECTED".equalsIgnoreCase(note.getType())) {
+                    subject = "Role Request Update";
+                    title = "Upgrade Declined";
+                } else if ("ROLE_UPDATE".equalsIgnoreCase(note.getType())) {
+                    subject = "InkWell Account Update";
+                    title = "Credential Status Change";
                 }
                 notificationService.sendStyledEmail(email, subject, title, note.getMessage(), "https://inkwell-blogging.netlify.app/dashboard");
             }
