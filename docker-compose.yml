@@ -112,6 +112,8 @@ services:
       - AWS_S3_BUCKET=${AWS_S3_BUCKET}
       - AWS_REGION=${AWS_REGION}
       - FRONTEND_URL=${FRONTEND_URL:-https://inkwell-blogging.netlify.app}
+    volumes:
+      - ./post_uploads:/app/post_uploads
     deploy:
       resources:
         limits:

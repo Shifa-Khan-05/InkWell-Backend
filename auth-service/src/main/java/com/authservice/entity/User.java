@@ -55,7 +55,7 @@ public class User {
 	private LocalDateTime tokenExpiry;
 	
 	@Column(name = "age")
-	private Integer age; // Add this field
+	private Integer age; 
 
 	@Column(name = "subscription_start_date")
 	private LocalDateTime subscriptionStartDate;

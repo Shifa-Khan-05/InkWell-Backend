@@ -17,7 +17,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 public class OAuthSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
     @Autowired
-    @Lazy // ✅ This breaks the circular dependency cycle
+    @Lazy // This breaks the circular dependency cycle
     private AuthService authService;
 
     @Value("${frontend.url:https://inkwell-blogging.netlify.app}")
