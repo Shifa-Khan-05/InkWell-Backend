@@ -36,21 +36,25 @@ public class PostEventConsumer {
             }
 
             Map<String, Object> user = authClient.getUserById(recipientId);
-            String email = (String) user.get("email");
-
-            if (email == null) return;
+            String email = (user != null) ? (String) user.get("email") : null;
 
             String actionUrl = frontendUrl + "/dashboard";
             
             if ("LIKE".equalsIgnoreCase(type)) {
                 notificationService.createNotification(recipientId, 0, type, "Someone liked your post: " + title, postId);
-                notificationService.sendStyledEmail(email, "New Engagement on Your Post", "You got a like! \uD83D\uDC96", "Someone just liked your manuscript: " + title, actionUrl);
+                if (email != null) {
+                    notificationService.sendStyledEmail(email, "New Engagement on Your Post", "You got a like! \uD83D\uDC96", "Someone just liked your manuscript: " + title, actionUrl);
+                }
             } else if ("COMMENT".equalsIgnoreCase(type)) {
                 notificationService.createNotification(recipientId, 0, type, "Someone commented on your post: " + title, postId);
-                notificationService.sendStyledEmail(email, "New Discussion on Your Post", "You got a comment! \uD83D\uDDE8\uFE0F", "Someone just commented on your manuscript: " + title, actionUrl);
+                if (email != null) {
+                    notificationService.sendStyledEmail(email, "New Discussion on Your Post", "You got a comment! \uD83D\uDDE8\uFE0F", "Someone just commented on your manuscript: " + title, actionUrl);
+                }
             } else if ("NEW_POST".equalsIgnoreCase(type)) {
                 notificationService.createNotification(recipientId, 0, type, "Your post '" + title + "' is published.", postId);
-                notificationService.sendStyledEmail(email, "Manuscript Published", "Successfully Published", "Your post '" + title + "' is now live for readers.", actionUrl);
+                if (email != null) {
+                    notificationService.sendStyledEmail(email, "Manuscript Published", "Successfully Published", "Your post '" + title + "' is now live for readers.", actionUrl);
+                }
             }
 
         } catch (Exception e) {
