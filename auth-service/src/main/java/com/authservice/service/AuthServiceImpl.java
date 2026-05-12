@@ -272,11 +272,36 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional
     public void deleteUser(Integer userId) {
-        if (!userRepository.existsById(userId)) {
-            throw new com.authservice.exception.ResourceNotFoundException(IDENTITY_NOT_FOUND);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new com.authservice.exception.ResourceNotFoundException(IDENTITY_NOT_FOUND));
+        
+        log.info("DIAGNOSTIC: Commencing deletion protocol for user ID: {}", userId);
+
+        // 1. Cascade Deletion: Remove all pending/past role requests
+        try {
+            roleRequestRepository.deleteByUserUserId(userId);
+            log.info("DIAGNOSTIC: Role requests purged.");
+        } catch (Exception e) {
+            log.warn("Non-fatal: Failed to purge role requests: {}", e.getMessage());
         }
-        userRepository.deleteById(userId);
+
+        // 2. Asset Cleanup: Remove profile image from S3 if it exists
+        if (s3Client != null && user.getProfileImageUrl() != null && user.getProfileImageUrl().contains(bucketName)) {
+            try {
+                String url = user.getProfileImageUrl();
+                String fileName = url.substring(url.lastIndexOf("/") + 1);
+                s3Client.deleteObject(bucketName, "uploads/" + fileName);
+                log.info("DIAGNOSTIC: S3 avatar expunged: {}", fileName);
+            } catch (Exception e) {
+                log.warn("Non-fatal: S3 image deletion failed: {}", e.getMessage());
+            }
+        }
+
+        // 3. Identity Erasure
+        userRepository.delete(user);
+        log.info("DIAGNOSTIC: Identity erasure complete for user ID: {}", userId);
     }
     
     @Override

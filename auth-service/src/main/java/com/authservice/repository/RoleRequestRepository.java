@@ -11,4 +11,9 @@ public interface RoleRequestRepository extends JpaRepository<RoleRequest, Intege
     List<RoleRequest> findByStatus(String status);
     List<RoleRequest> findByUserUserId(int userId);
     boolean existsByUserUserIdAndStatus(int userId, String status);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.transaction.annotation.Transactional
+    @org.springframework.data.jpa.repository.Query("DELETE FROM RoleRequest r WHERE r.user.userId = :userId")
+    void deleteByUserUserId(int userId);
 }
