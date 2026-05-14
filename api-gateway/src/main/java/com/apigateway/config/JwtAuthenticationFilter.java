@@ -36,7 +36,10 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
             path.contains("/login") ||
             path.contains("/oauth2") ||
             path.contains("/swagger") ||
-            path.contains("/api-docs")) {
+            path.contains("/api-docs") ||
+            path.contains("/uploads") ||
+            path.contains("/post_uploads") ||
+            path.contains("/media/display")) {
 
             return chain.filter(exchange);
         }
