@@ -51,6 +51,7 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=prod
       - EUREKA_URL=http://inkwell-eureka:8761/eureka/
+      - JWT_SECRET=${JWT_SECRET}
     deploy:
       resources:
         limits:
