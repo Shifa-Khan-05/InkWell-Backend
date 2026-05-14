@@ -7,5 +7,7 @@ spring:
     password: ${DB_PASSWORD}
 eureka:
   client:
+    register-with-eureka: false
+    fetch-registry: false
     service-url:
-      defaultZone: ${EUREKA_URL:http://eureka-server:8761/eureka/}
+      defaultZone: ${EUREKA_URL:http://inkwell-eureka:8761/eureka/}
