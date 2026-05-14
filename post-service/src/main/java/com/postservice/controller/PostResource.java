@@ -86,7 +86,7 @@ public class PostResource {
 		return ResponseEntity.noContent().build();
 	}
 
-    // 🔖 Saved Posts (Pro Feature)
+    // Saved Posts (Pro Feature)
     @PostMapping("/{postId}/save")
     public ResponseEntity<Void> toggleSavePost(@PathVariable int postId, @RequestParam(name = "userId") int userId) {
         postService.toggleSavePost(postId, userId);

@@ -56,13 +56,12 @@ public class MediaResource {
 		}
 	}
 
-	// ✅ Change this from /{id} to /detail/{id} to avoid conflicts
 	@GetMapping("/detail/{id}")
 	public ResponseEntity<Media> getDetails(@PathVariable Integer id) {
 		return ResponseEntity.ok(service.getMediaById(id));
 	}
 
-	// ✅ Keep this as is
+	
 	@GetMapping("/all")
 	public ResponseEntity<List<Media>> getAllMedia() {
 		return ResponseEntity.ok(service.getAllMedia());

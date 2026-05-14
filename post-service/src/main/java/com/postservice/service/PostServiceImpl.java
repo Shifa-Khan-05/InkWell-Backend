@@ -1,6 +1,7 @@
 package com.postservice.service;
 
 import com.postservice.client.AuthClient;
+
 import com.postservice.client.TaxonomyClient;
 import com.postservice.config.RabbitMQConfig;
 import com.postservice.dto.PostCreationDTO;
@@ -31,20 +32,22 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class PostServiceImpl implements PostService {
 
-	@org.springframework.beans.factory.annotation.Value("${gateway.url:https://3.108.190.193.nip.io}")
+	@Value("${gateway.url:https://3.108.190.193.nip.io}")
     private String gatewayUrl;
 
-	@org.springframework.beans.factory.annotation.Autowired(required = false)
+	@Autowired(required = false)
 	private com.amazonaws.services.s3.AmazonS3 s3Client;
 
-	@org.springframework.beans.factory.annotation.Value("${AWS_S3_BUCKET:inkwell-media-storage}")
+	@Value("${AWS_S3_BUCKET:inkwell-media-storage}")
 	private String bucketName;
 
 	private final PostRepository postRepository;

@@ -1,6 +1,7 @@
 package com.newsletterservice.service;
 
 import com.newsletterservice.entity.Subscriber;
+
 import com.newsletterservice.repository.SubscriberRepository;
 
 import jakarta.mail.internet.MimeMessage;
@@ -35,7 +36,7 @@ public class NewsletterServiceImpl implements NewsletterService {
 			Subscriber subscriber = new Subscriber();
 			subscriber.setEmail(email);
 			subscriber.setVerificationToken(token);
-			subscriber.setStatus("PENDING"); // ✅ Set to Pending initially
+			subscriber.setStatus("PENDING"); // Set to Pending initially
 			repository.save(subscriber);
 
 			// Send Confirmation Link (Double Opt-In)
@@ -111,7 +112,7 @@ public class NewsletterServiceImpl implements NewsletterService {
 
 	@Override
 	public void sendBulkEmail(String subject, String body) {
-		// ✅ Only fetch users who have completed the Double Opt-In
+		// Only fetch users who have completed the Double Opt-In
 		List<Subscriber> activeSubscribers = repository.findByStatus("ACTIVE");
 
 		for (Subscriber s : activeSubscribers) {

@@ -34,7 +34,7 @@ public class Post {
     private String featuredImageUrl;
     private String status; 
 
-    // ✅ This field MUST exist for setCategoryId() to work
+    // This field MUST exist for setCategoryId() to work
     @Column(name = "category_id")
     private Integer categoryId;
 

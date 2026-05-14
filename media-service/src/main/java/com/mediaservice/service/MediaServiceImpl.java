@@ -44,7 +44,7 @@ public class MediaServiceImpl implements MediaService {
 		media.setSizeKb(file.getSize() / 1024);
 		media.setAltText(altText);
 		
-		// Fix: Use Gateway URL for production compatibility
+		//  Use Gateway URL for production compatibility
 		media.setUrl(gatewayUrl + "/media/display/" + fileName); 
 
 		return repository.save(media);

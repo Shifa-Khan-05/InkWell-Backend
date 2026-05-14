@@ -22,7 +22,7 @@ public class Media {
     @Column(columnDefinition = "TEXT")
     private String url; // The public URL to access the image
     
-    private String mimeType; // e.g., image/jpeg, image/png
+    private String mimeType; // e.g. image/jpeg, image/png
     private Long sizeKb;
     private String altText; // For SEO and Accessibility
     

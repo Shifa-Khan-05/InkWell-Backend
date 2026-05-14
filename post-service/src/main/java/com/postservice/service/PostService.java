@@ -7,14 +7,14 @@ import com.postservice.dto.PostCreationDTO;
 import com.postservice.dto.PostResponseDTO;
 
 public interface PostService {
-	// 📝 Post Management
+	//  Post Management
 	PostResponseDTO createPostWithImage(PostCreationDTO postDto, MultipartFile image) throws IOException;
 
 	PostResponseDTO updatePost(int postId, PostCreationDTO postDto, MultipartFile image) throws IOException;
 
 	void deletePost(int postId);
 
-	// 🔍 Fetching Data
+	// Fetching Data
 	PostResponseDTO getPostById(int id);
 
 	PostResponseDTO getPostBySlug(String slug, int currentUserId);
@@ -25,7 +25,7 @@ public interface PostService {
 
 	List<PostResponseDTO> getPostsByCategoryId(Integer catId);
 
-	// ❤️ Interaction
+	// Interaction
 	void incrementLikes(int postId, int userId);
 
     // 🔖 Saved Posts (Pro Feature)

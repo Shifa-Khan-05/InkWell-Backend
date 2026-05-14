@@ -361,7 +361,7 @@ public class AuthServiceImpl implements AuthService {
         roleRequestRepository.save(request);
         log.info("Role request for user {} saved successfully", userId);
 
-        // ✅ Notify Admins about the role change request (In-App + Auto Email)
+        //  Notify Admins about the role change request (In-App + Auto Email)
         try {
             List<User> admins = userRepository.findByRole("ROLE_ADMIN");
             for (User admin : admins) {
