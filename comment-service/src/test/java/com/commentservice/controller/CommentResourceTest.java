@@ -114,11 +114,11 @@ class CommentResourceTest {
 
     @Test
     void delete_Success() {
-        doNothing().when(commentService).deleteComment(1L);
+        doNothing().when(commentService).deleteComment(1L, 1);
 
-        ResponseEntity<Void> response = commentResource.delete(1L);
+        ResponseEntity<Void> response = commentResource.delete(1L, 1);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
-        verify(commentService).deleteComment(1L);
+        verify(commentService).deleteComment(1L, 1);
     }
 }

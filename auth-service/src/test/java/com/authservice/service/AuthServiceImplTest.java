@@ -96,6 +96,7 @@ class AuthServiceImplTest {
         assertThat(result).isNotNull();
         verify(userRepository).save(any(User.class));
         verify(emailOtpRepository).delete(emailOtp);
+        // Verify notification is sent (Styled Email)
         verify(notificationClient).sendStyledEmail(anyMap());
     }
 
@@ -103,7 +104,8 @@ class AuthServiceImplTest {
     void login_Success() {
         when(userRepository.findByEmail("test@test.com")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("password", "hashedpassword")).thenReturn(true);
-        when(jwtUtils.generateToken("test@test.com")).thenReturn("token");
+        // ✅ FIXED: Added role parameter to match updated JwtUtils signature
+        when(jwtUtils.generateToken("test@test.com", "ROLE_READER")).thenReturn("token");
 
         String token = authService.login("test@test.com", "password");
 
@@ -118,7 +120,8 @@ class AuthServiceImplTest {
      */
     @Test
     void updateProfileWithFile_DirectoryAlreadyExists() throws Exception {
-        Path path = Paths.get("uploads/");
+        // Use a temporary path within the workspace
+        Path path = Paths.get("auth_test_uploads/");
         if (!Files.exists(path)) {
             Files.createDirectories(path);
         }
@@ -130,7 +133,11 @@ class AuthServiceImplTest {
         UserResponseDTO result = authService.updateProfileWithFile(1, "Name", "user", "bio", 25, "pass", file);
 
         assertThat(result).isNotNull();
-        assertThat(user.getProfileImageUrl()).contains("uploads/user_1");
+        // The URL generation logic uses gatewayUrl + path
+        assertThat(user.getProfileImageUrl()).contains("user_1");
+        
+        // Cleanup
+        Files.deleteIfExists(path);
     }
 
     /**

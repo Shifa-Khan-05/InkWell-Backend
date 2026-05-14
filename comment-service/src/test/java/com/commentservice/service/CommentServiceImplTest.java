@@ -75,7 +75,12 @@ class CommentServiceImplTest {
 
     @Test
     void deleteComment_Success() {
-        commentService.deleteComment(1L);
+        when(commentRepository.findById(1L)).thenReturn(Optional.of(comment));
+        UserResponseDTO user = new UserResponseDTO();
+        user.setRole("ROLE_READER");
+        when(authClient.getUserById(1)).thenReturn(user);
+
+        commentService.deleteComment(1L, 1);
         verify(commentRepository).deleteById(1L);
     }
 

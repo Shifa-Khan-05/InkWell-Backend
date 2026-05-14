@@ -7,4 +7,5 @@ public class UserResponseDTO {
     private int userId;
     private String fullName;
     private String email;
+    private String role;
 }

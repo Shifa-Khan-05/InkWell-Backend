@@ -10,5 +10,6 @@ public class CommentResponseDTO {
     private String authorName; // Fetched via AuthClient
     private String status;
     private int likesCount;
+    private int userId; // ID of the commenter
     private LocalDateTime createdAt;
 }

@@ -90,6 +90,7 @@ public class CommentServiceImpl implements CommentService {
         dto.setContent(comment.getContent());
         dto.setStatus(comment.getStatus());
         dto.setLikesCount(comment.getLikesCount());
+        dto.setUserId(comment.getUserId());
         dto.setCreatedAt(comment.getCreatedAt());
 
         try {
