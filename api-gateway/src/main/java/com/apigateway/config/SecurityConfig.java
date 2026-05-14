@@ -2,10 +2,9 @@ package com.apigateway.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.web.server.SecurityWebFilterChain;
-
-import org.springframework.security.config.Customizer;
 
 @Configuration
 public class SecurityConfig {
@@ -14,11 +13,12 @@ public class SecurityConfig {
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
 
         http
-            .cors(Customizer.withDefaults())
+            .cors(ServerHttpSecurity.CorsSpec::disable)
             .csrf(ServerHttpSecurity.CsrfSpec::disable)
             .formLogin(ServerHttpSecurity.FormLoginSpec::disable)
             .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)
             .authorizeExchange(exchanges -> exchanges
+                    .pathMatchers(HttpMethod.OPTIONS).permitAll()
                     .pathMatchers(
                             "/auth/login",
                             "/auth/register",
