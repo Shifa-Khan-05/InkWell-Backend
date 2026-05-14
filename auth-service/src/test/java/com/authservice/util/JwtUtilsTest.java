@@ -19,7 +19,7 @@ class JwtUtilsTest {
 
     @Test
     void generateToken_Success() {
-        String token = jwtUtils.generateToken("test@test.com");
+        String token = jwtUtils.generateToken("test@test.com", "ROLE_USER");
         assertThat(token).isNotNull();
         assertThat(token).isNotEmpty();
     }

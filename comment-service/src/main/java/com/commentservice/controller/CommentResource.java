@@ -58,8 +58,8 @@ public class CommentResource {
 	}
 
 	@DeleteMapping("/{id}")
-	public ResponseEntity<Void> delete(@PathVariable Long id) {
-		commentService.deleteComment(id);
+	public ResponseEntity<Void> delete(@PathVariable Long id, @RequestParam int userId) {
+		commentService.deleteComment(id, userId);
 		return ResponseEntity.noContent().build();
 	}
 }

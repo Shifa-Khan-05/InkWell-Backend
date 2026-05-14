@@ -47,8 +47,25 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
-    public void deleteComment(Long commentId) {
-        commentRepository.deleteById(commentId);
+    public void deleteComment(Long commentId, int userId) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new RuntimeException("Comment not found"));
+        
+        // 1. Fetch User Role for Admin check
+        String role = "";
+        try {
+            UserResponseDTO user = authClient.getUserById(userId);
+            role = user.getRole();
+        } catch (Exception e) {
+            // Silently fail role check, proceed with ownership check
+        }
+
+        // 2. Permission logic: Comment Author, Post Author, or ADMIN
+        if (comment.getUserId() == userId || comment.getAuthorId() == userId || role.contains("ADMIN")) {
+            commentRepository.deleteById(commentId);
+        } else {
+            throw new RuntimeException("You do not have permission to delete this manuscript discussion.");
+        }
     }
 
     @Override

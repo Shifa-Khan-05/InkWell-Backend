@@ -20,5 +20,6 @@ public class PostResponseDTO implements Serializable {
 	private int viewCount;
 	private int likesCount;
 	private String featuredImageUrl; // ✅ Matches frontend postPayload
+	private String authorImageUrl; // ✅ ADDED
 	private boolean isLikedByCurrentUser; // ✅ ADD THIS
 }

@@ -120,7 +120,7 @@ public class AuthServiceImpl implements AuthService {
             throw new com.authservice.exception.AuthException("Invalid credentials!");
         }
             
-        return jwtUtils.generateToken(user.getEmail());
+        return jwtUtils.generateToken(user.getEmail(), user.getRole());
     }
 
     @Override
@@ -223,7 +223,7 @@ public class AuthServiceImpl implements AuthService {
             newUser.setPasswordHash("OAUTH_USER");
             return userRepository.save(newUser);
         });
-        return jwtUtils.generateToken(user.getEmail());
+        return jwtUtils.generateToken(user.getEmail(), user.getRole());
     }
 
     @Override

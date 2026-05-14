@@ -21,5 +21,5 @@ public interface CommentService {
 
     void likeComment(Long commentId);
 
-    void deleteComment(Long commentId);
+    void deleteComment(Long commentId, int userId);
 }

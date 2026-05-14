@@ -359,6 +359,7 @@ public class PostServiceImpl implements PostService {
 			UserResponseDTO author = authClient.getUserById(post.getAuthorId());
 			if (author != null) {
 				dto.setFullName(author.getFullName());
+				dto.setAuthorImageUrl(author.getProfileImageUrl());
 				log.info("DIAGNOSTIC: Step 12 - Author found: {}", author.getFullName());
 			} else {
 				dto.setFullName("Anonymous Author");

@@ -21,14 +21,16 @@ public class JwtUtils {
 	@Value("${jwt.expiration}")
 	private int jwtExpirationMs;
 
-	public String generateToken(String email) {
+	public String generateToken(String email, String role) {
 		// Modern way to create the signing key
 		SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
 
-		return Jwts.builder().subject(email) //
-				.issuedAt(new Date()).expiration(new Date(System.currentTimeMillis() + jwtExpirationMs)).signWith(key) // Algorithm
-				// from
-				// the
+		return Jwts.builder()
+				.subject(email)
+				.claim("role", role)
+				.issuedAt(new Date())
+				.expiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
+				.signWith(key)
 				.compact();
 	}
 }
